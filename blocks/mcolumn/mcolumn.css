@@ -1,7 +1,4 @@
-.mcolumn > div {
-  display: flex;
-  flex-direction: column;
-}
+
 
 .mcolumn img {
   width: 100%;
