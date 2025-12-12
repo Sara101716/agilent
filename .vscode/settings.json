@@ -1,0 +1,9 @@
+{
+  "jestrunner.jestCommand": "npm test --",
+  "jestrunner.debugOptions": {
+    "env": {
+      "NODE_OPTIONS": "--experimental-vm-modules"
+    }
+  },
+  "editor.tabSize": 2
+}

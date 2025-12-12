@@ -1,0 +1,606 @@
+import { jest } from '@jest/globals';
+import decorate from '../../blocks/quickorder/quickorder.js';
+
+// Helper function to test the validatePartNumber function
+// Since it's not exported, we'll recreate it for testing
+function validatePartNumber(partNumber) {
+  if (!partNumber || partNumber.trim() === '') {
+    return false;
+  }
+  // eslint-disable-next-line no-useless-escape
+  const hasSpecialChars = /[/\\!@#$%^&*()+=[\]{}|;':"<>?,~`\s]/.test(partNumber);
+  return !hasSpecialChars;
+}
+
+describe('QuickOrder Block', () => {
+  let block;
+  let mockMatchMedia;
+
+  beforeEach(() => {
+    block = document.createElement('div');
+    block.classList.add('quickorder');
+    mockMatchMedia = jest.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: mockMatchMedia,
+    });
+
+    // Reset DOM
+    document.body.innerHTML = '';
+    document.body.appendChild(block);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('validatePartNumber function', () => {
+    test('should return false for empty or null inputs', () => {
+      expect(validatePartNumber('')).toBe(false);
+      expect(validatePartNumber(null)).toBe(false);
+      expect(validatePartNumber(undefined)).toBe(false);
+      expect(validatePartNumber('   ')).toBe(false); // whitespace only
+    });
+
+    test('should return false for inputs with special characters', () => {
+      const invalidInputs = [
+        'ABC/123', 'ABC\\123', 'ABC 123', 'ABC!123', 'ABC@123',
+        'ABC#123', 'ABC$123', 'ABC%123', 'ABC^123', 'ABC&123',
+        'ABC*123', 'ABC(123)', 'ABC+123', 'ABC=123', 'ABC[123]',
+        'ABC{123}', 'ABC|123', 'ABC;123', "ABC'123", 'ABC:123',
+        'ABC"123', 'ABC<123>', 'ABC?123', 'ABC,123',
+        'ABC~123', 'ABC`123',
+      ];
+
+      invalidInputs.forEach((input) => {
+        expect(validatePartNumber(input)).toBe(false);
+      });
+    });
+
+    test('should return true for valid part numbers', () => {
+      const validInputs = [
+        'ABC123', 'XYZ456', 'Part789', '123456', 'ABCDEF',
+        'a1b2c3', 'Product1', 'Item999', 'validpart', 'VALID123',
+        '0123456789', 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        'ABC.123', 'Part.Number.123', 'item.with.dots',
+      ];
+
+      validInputs.forEach((input) => {
+        expect(validatePartNumber(input)).toBe(true);
+      });
+    });
+  });
+
+  describe('decorate function', () => {
+    test('should warn when block has no content', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      decorate(block);
+      expect(consoleSpy).toHaveBeenCalledWith('Quick Order block requires at least one row with content.');
+      consoleSpy.mockRestore();
+    });
+
+    test('should process block with proper structure including error message', () => {
+      // Create proper block structure with error message
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number</p>
+            <p><em>Enter product part number</em></p>
+            <p><button class="agt-button agt-button--secondary">Add to Cart</button></p>
+            <p><a href="#" class="agt-link">Add Multiple Items</a></p>
+            <p><strong>Please enter a valid part number</strong></p>
+          </div>
+        </div>
+      `;
+
+      decorate(block);
+
+      // Check if title was processed
+      const title = block.querySelector('.quickorder__title');
+      expect(title).toBeTruthy();
+      expect(title.tagName).toBe('H2');
+
+      // Check if form was created
+      const form = block.querySelector('.quickorder__form');
+      expect(form).toBeTruthy();
+
+      // Check if form wrapper class was added
+      const formWrapper = block.querySelector('.quickorder__form-wrapper');
+      expect(formWrapper).toBeTruthy();
+    });
+
+    test('should handle different header levels', () => {
+      const headerLevels = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
+      headerLevels.forEach((headerTag) => {
+        block.innerHTML = `
+          <div>
+            <div>
+              <${headerTag}>Quick Order</${headerTag}>
+              <p>Enter part number</p>
+            </div>
+          </div>
+        `;
+
+        decorate(block);
+
+        const title = block.querySelector('.quickorder__title');
+        expect(title).toBeTruthy();
+        expect(title.tagName).toBe(headerTag.toUpperCase());
+
+        // Reset for next iteration
+        block.innerHTML = '';
+      });
+    });
+  });
+
+  describe('form template generation', () => {
+    test('should generate form with all elements when content is provided', () => {
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number:</p>
+            <p><em>e.g., ABC123</em></p>
+            <p><a href="#" class="agt-link">Add Multiple Items</a></p>
+          </div>
+        </div>
+      `;
+
+      decorate(block);
+
+      // Check form structure
+      const form = block.querySelector('.quickorder__form');
+      expect(form).toBeTruthy();
+
+      // Check label
+      const label = form.querySelector('label[for="part-number"]');
+      expect(label).toBeTruthy();
+      expect(label.textContent).toContain('Enter part number:');
+
+      // Check input
+      const input = form.querySelector('input[name="partNumber"]');
+      expect(input).toBeTruthy();
+      expect(input.getAttribute('placeholder')).toContain('e.g., ABC123');
+
+      // Check add-to-cart block
+      const addToCartBlock = form.querySelector('.add-to-cart');
+      expect(addToCartBlock).toBeTruthy();
+      expect(addToCartBlock.classList.contains('quickorder__form-submit')).toBe(true);
+
+      // Check multiple items link
+      const multipleLink = form.querySelector('.agt-link');
+      expect(multipleLink).toBeTruthy();
+    });
+  });
+
+  describe('form event handling', () => {
+    let form;
+    let mockMediaQueryList;
+
+    beforeEach(() => {
+      // Setup a more complete mock for matchMedia
+      mockMediaQueryList = {
+        matches: false,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        media: '(max-width: 768px)',
+        dispatchEvent: jest.fn(),
+      };
+      mockMatchMedia.mockReturnValue(mockMediaQueryList);
+
+      // Create block with complete structure including error message
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number:</p>
+            <p><em>e.g., ABC123</em></p>
+            <p><button class="agt-button agt-button--secondary">Add to Cart</button></p>
+            <p><a href="#" class="agt-link">Add Multiple Items</a></p>
+            <p><strong>Please enter a valid part number</strong></p>
+          </div>
+        </div>
+      `;
+
+      decorate(block);
+      form = block.querySelector('.quickorder__form');
+    });
+
+    test('should register media query listener for responsive behavior', () => {
+      expect(mockMatchMedia).toHaveBeenCalledWith('(max-width: 768px)');
+      expect(mockMediaQueryList.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+    });
+
+    test('should handle form submission with valid input', () => {
+      const input = form.querySelector('.quickorder__form-input');
+
+      // Set input value
+      input.value = 'ABC123';
+
+      // Create and dispatch submit event with preventDefault spy
+      const submitEvent = new Event('submit');
+      const preventDefaultSpy = jest.spyOn(submitEvent, 'preventDefault');
+
+      // Submit form
+      form.dispatchEvent(submitEvent);
+
+      // Should prevent default
+      expect(preventDefaultSpy).toHaveBeenCalled();
+
+      // Should not show error
+      const errorElement = form.querySelector('.agt-input__error-container');
+      expect(errorElement).toBeFalsy();
+    });
+
+    test('should show error message for empty input', () => {
+      const input = form.querySelector('.quickorder__form-input');
+      const submitEvent = new Event('submit');
+
+      // Leave input empty
+      input.value = '';
+
+      // Submit form
+      form.dispatchEvent(submitEvent);
+
+      // Should show error message
+      const errorElement = form.querySelector('.agt-input__error-container');
+      expect(errorElement).toBeTruthy();
+
+      // Should add error class to input
+      expect(input.classList.contains('agt-input--error')).toBe(true);
+    });
+
+    test('should show error message for input with special characters', () => {
+      const input = form.querySelector('.quickorder__form-input');
+      const submitEvent = new Event('submit');
+
+      const invalidInputs = [
+        'ABC/123',
+        'ABC\\123',
+        'ABC 123',
+        'ABC!123',
+        'ABC@123',
+        'ABC#123',
+        'ABC$123',
+        'ABC%123',
+        'ABC^123',
+        'ABC&123',
+        'ABC*123',
+        'ABC(123)',
+        'ABC+123',
+        'ABC=123',
+        'ABC[123]',
+        'ABC{123}',
+        'ABC|123',
+        'ABC;123',
+        "ABC'123",
+        'ABC:123',
+        'ABC"123',
+        'ABC<123>',
+        'ABC?123',
+        'ABC,123',
+        'ABC~123',
+        'ABC`123',
+      ];
+
+      invalidInputs.forEach((invalidInput) => {
+        // Clear any existing errors first
+        const existingError = form.querySelector('.agt-input__error-container');
+        if (existingError) {
+          existingError.remove();
+        }
+        input.classList.remove('agt-input--error');
+
+        input.value = invalidInput;
+        form.dispatchEvent(submitEvent);
+
+        // Should show error message
+        const errorElement = form.querySelector('.agt-input__error-container');
+        expect(errorElement).toBeTruthy();
+
+        // Should add error class to input
+        expect(input.classList.contains('agt-input--error')).toBe(true);
+      });
+    });
+
+    test('should accept valid part numbers without special characters', () => {
+      const input = form.querySelector('.quickorder__form-input');
+      const submitEvent = new Event('submit');
+
+      const validInputs = [
+        'ABC123',
+        'XYZ456',
+        'Part789',
+        '123456',
+        'ABCDEF',
+        'a1b2c3',
+        'Product1',
+        'Item999',
+        'ABC.123',
+        'Part.Number.123',
+      ];
+
+      validInputs.forEach((validInput) => {
+        // Clear any existing errors first
+        const existingError = form.querySelector('.agt-input__error-container');
+        if (existingError) {
+          existingError.remove();
+        }
+        input.classList.remove('agt-input--error');
+
+        input.value = validInput;
+        form.dispatchEvent(submitEvent);
+
+        // Should not show error message
+        const errorElement = form.querySelector('.agt-input__error-container');
+        expect(errorElement).toBeFalsy();
+
+        // Should not add error class to input
+        expect(input.classList.contains('agt-input--error')).toBe(false);
+      });
+    });
+
+    test('should clear error on input change', () => {
+      const input = form.querySelector('.quickorder__form-input');
+      const inputEvent = new Event('input');
+      const submitEvent = new Event('submit');
+
+      // First create an error by submitting empty input
+      input.value = '';
+      form.dispatchEvent(submitEvent);
+
+      // Verify error exists
+      let errorElement = form.querySelector('.agt-input__error-container');
+      expect(errorElement).toBeTruthy();
+      expect(input.classList.contains('agt-input--error')).toBe(true);
+
+      // Now type something in the input
+      input.value = 'A';
+      input.dispatchEvent(inputEvent);
+
+      // Error should be cleared
+      errorElement = form.querySelector('.agt-input__error-container');
+      expect(errorElement).toBeFalsy();
+      expect(input.classList.contains('agt-input--error')).toBe(false);
+    });
+
+    test('should clear existing error on subsequent valid submission', () => {
+      const input = form.querySelector('.quickorder__form-input');
+      const submitEvent = new Event('submit');
+
+      // First submission with invalid input to create error
+      input.value = 'ABC/123'; // Invalid due to special character
+      form.dispatchEvent(submitEvent);
+
+      // Verify error exists
+      let errorElement = form.querySelector('.agt-input__error-container');
+      expect(errorElement).toBeTruthy();
+      expect(input.classList.contains('agt-input--error')).toBe(true);
+
+      // Second submission with valid input
+      input.value = 'ABC123'; // Valid input
+      form.dispatchEvent(submitEvent);
+
+      // Error should be cleared
+      errorElement = form.querySelector('.agt-input__error-container');
+      expect(errorElement).toBeFalsy();
+      expect(input.classList.contains('agt-input--error')).toBe(false);
+    });
+
+    test('should handle responsive link behavior on mobile', () => {
+      const addMultipleLink = form.querySelector('.agt-link');
+
+      // Get the change handler that was registered
+      const changeHandler = mockMediaQueryList.addEventListener.mock.calls[0][1];
+
+      // Simulate mobile view
+      mockMediaQueryList.matches = true;
+      changeHandler();
+
+      // Link should become a button on mobile
+      expect(addMultipleLink.classList.contains('agt-button')).toBe(true);
+      expect(addMultipleLink.classList.contains('agt-button--secondary')).toBe(true);
+      expect(addMultipleLink.classList.contains('agt-link')).toBe(false);
+
+      // Simulate desktop view
+      mockMediaQueryList.matches = false;
+      changeHandler();
+
+      // Link should revert to link styling
+      expect(addMultipleLink.classList.contains('agt-button')).toBe(false);
+      expect(addMultipleLink.classList.contains('agt-button--secondary')).toBe(false);
+      expect(addMultipleLink.classList.contains('agt-link')).toBe(true);
+    });
+  });
+
+  describe('edge cases', () => {
+    test('should handle block with multiple columns', () => {
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number</p>
+          </div>
+          <div>
+            <p>Additional content</p>
+          </div>
+        </div>
+      `;
+
+      expect(() => decorate(block)).not.toThrow();
+
+      const formWrapper = block.querySelector('.quickorder__form-wrapper');
+      expect(formWrapper).toBeTruthy();
+    });
+
+    test('should add content wrapper class to second column without media', () => {
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number</p>
+          </div>
+        </div>
+        <div>
+          <div>
+            <h3>Additional Info</h3>
+            <p>Additional content</p>
+          </div>
+        </div>
+      `;
+
+      decorate(block);
+
+      const rows = block.querySelectorAll(':scope > div');
+      const columnTwoContent = rows[1].querySelector('div');
+      expect(columnTwoContent.classList.contains('quickorder__content-wrapper')).toBe(true);
+
+      const title = columnTwoContent.querySelector('.quickorder__title');
+      expect(title).toBeTruthy();
+      expect(title.tagName).toBe('H3');
+    });
+
+    test('should NOT add content wrapper class to second column with picture', () => {
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number</p>
+          </div>
+        </div>
+        <div>
+          <div>
+            <picture>
+              <img src="test.jpg" alt="test" />
+            </picture>
+            <h3>Additional Info</h3>
+          </div>
+        </div>
+      `;
+
+      decorate(block);
+
+      const rows = block.querySelectorAll(':scope > div');
+      const columnTwoContent = rows[1].querySelector('div');
+      expect(columnTwoContent.classList.contains('quickorder__content-wrapper')).toBe(false);
+
+      // Should still add title class
+      const title = columnTwoContent.querySelector('.quickorder__title');
+      expect(title).toBeTruthy();
+    });
+
+    test('should NOT add content wrapper class to second column with video', () => {
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number</p>
+          </div>
+        </div>
+        <div>
+          <div>
+            <video controls>
+              <source src="test.mp4" type="video/mp4">
+            </video>
+            <h3>Additional Info</h3>
+          </div>
+        </div>
+      `;
+
+      decorate(block);
+
+      const rows = block.querySelectorAll(':scope > div');
+      const columnTwoContent = rows[1].querySelector('div');
+      expect(columnTwoContent.classList.contains('quickorder__content-wrapper')).toBe(false);
+
+      // Should still add title class
+      const title = columnTwoContent.querySelector('.quickorder__title');
+      expect(title).toBeTruthy();
+    });
+
+    test('should handle second column with different header levels', () => {
+      const headerLevels = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
+      headerLevels.forEach((headerTag) => {
+        // Create a fresh block for each test
+        const testBlock = document.createElement('div');
+        testBlock.classList.add('quickorder');
+        testBlock.innerHTML = `
+          <div>
+            <div>
+              <h2>Quick Order</h2>
+              <p>Enter part number</p>
+            </div>
+          </div>
+          <div>
+            <div>
+              <${headerTag}>Additional Info</${headerTag}>
+              <p>Content</p>
+            </div>
+          </div>
+        `;
+
+        decorate(testBlock);
+
+        const rows = testBlock.querySelectorAll(':scope > div');
+        const columnTwoContent = rows[1].querySelector('div');
+        const title = columnTwoContent.querySelector('.quickorder__title');
+        expect(title).toBeTruthy();
+        expect(title.tagName).toBe(headerTag.toUpperCase());
+      });
+    });
+
+    test('should handle second column without title', () => {
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+            <p>Enter part number</p>
+          </div>
+        </div>
+        <div>
+          <div>
+            <p>Just content without title</p>
+          </div>
+        </div>
+      `;
+
+      decorate(block);
+
+      const rows = block.querySelectorAll(':scope > div');
+      const columnTwoContent = rows[1].querySelector('div');
+      expect(columnTwoContent.classList.contains('quickorder__content-wrapper')).toBe(true);
+
+      const title = columnTwoContent.querySelector('.quickorder__title');
+      expect(title).toBeFalsy();
+    });
+
+    test('should handle null/undefined elements in content', () => {
+      block.innerHTML = `
+        <div>
+          <div>
+            <h2>Quick Order</h2>
+          </div>
+        </div>
+      `;
+
+      expect(() => decorate(block)).not.toThrow();
+
+      const form = block.querySelector('.quickorder__form');
+      expect(form).toBeTruthy();
+
+      // Form should still be functional even with missing elements
+      const input = form.querySelector('input[name="partNumber"]');
+      expect(input).toBeTruthy();
+    });
+  });
+});

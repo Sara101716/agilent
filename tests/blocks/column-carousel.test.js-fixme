@@ -1,0 +1,353 @@
+import { jest } from '@jest/globals';
+import { decorateColumnCarousel } from '../../blocks/columns/column-carousel.js';
+
+// Mock getPlaceholder for deterministic aria-labels
+jest.mock('../../scripts/helpers/index.js', () => ({
+  getPlaceholder: (str) => str,
+}));
+
+// Mock scrollTo instead of scrollIntoView for JSDOM
+Element.prototype.scrollTo = jest.fn();
+
+// Mock IntersectionObserver for Jest environment
+class MockIntersectionObserver {
+  constructor(callback) {
+    this.callback = callback;
+    this.elements = new Set();
+  }
+
+  observe(element) {
+    this.elements.add(element);
+  }
+
+  unobserve(element) {
+    this.elements.delete(element);
+  }
+
+  disconnect() {
+    this.elements.clear();
+  }
+
+  // Utility method to trigger intersection
+  triggerIntersection(entries) {
+    this.callback(entries);
+  }
+}
+
+window.IntersectionObserver = MockIntersectionObserver;
+
+// Mock matchMedia globally
+beforeAll(() => {
+  window.matchMedia = jest.fn().mockImplementation((query) => ({
+    matches: query.includes('max-width: 767px') ? window.innerWidth <= 767 : false,
+    media: query,
+    onchange: null,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  }));
+});
+
+describe('Column Carousel', () => {
+  // Helper to create a block with test content
+  function createTestBlock(itemCount = 12) {
+    const block = document.createElement('div');
+    block.className = 'column-carousel';
+    // Create rows with children
+    const row = document.createElement('div');
+    for (let i = 0; i < itemCount; i += 1) {
+      const item = document.createElement('div');
+      item.textContent = `Item ${i + 1}`;
+      row.appendChild(item);
+    }
+    block.appendChild(row);
+
+    document.body.appendChild(block);
+    return block;
+  }
+
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    jest.clearAllMocks();
+  });
+
+  describe('createSlides', () => {
+    it('groups 8 items per slide on desktop', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(12);
+      decorateColumnCarousel(block);
+
+      const slides = block.querySelectorAll('.columns__slide');
+      expect(slides.length).toBe(2);
+      expect(slides[0].children.length).toBe(8);
+      expect(slides[1].children.length).toBe(4);
+    });
+
+    it('groups 4 items per slide on mobile', () => {
+      window.innerWidth = 767;
+      const block = createTestBlock(10);
+      decorateColumnCarousel(block);
+
+      const slides = block.querySelectorAll('.columns__slide');
+      expect(slides.length).toBe(3);
+      expect(slides[0].children.length).toBe(4);
+      expect(slides[1].children.length).toBe(4);
+      expect(slides[2].children.length).toBe(2);
+    });
+  });
+
+  describe('createNavigation', () => {
+    it('creates navigation with button elements', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const nav = block.querySelector('.columns__nav');
+      expect(nav).not.toBeNull();
+
+      // Check for button arrows (not links)
+      const prevArrow = nav.querySelector('button.agt-button--secondary');
+      const nextArrow = nav.querySelectorAll('button.agt-button--secondary')[1];
+      expect(prevArrow).not.toBeNull();
+      expect(nextArrow).not.toBeNull();
+      expect(prevArrow.type).toBe('button');
+      expect(nextArrow.type).toBe('button');
+      expect(prevArrow.getAttribute('aria-label')).toBe('Previous slide');
+      expect(nextArrow.getAttribute('aria-label')).toBe('Next slide');
+    });
+
+    it('creates dots with correct ARIA attributes', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const nav = block.querySelector('.columns__nav');
+      const dots = nav.querySelectorAll('.columns__nav-dot');
+      expect(dots.length).toBe(2); // 16 items, 8 per slide = 2 slides
+      // Check first dot (active)
+      expect(dots[0].classList.contains('active')).toBe(true);
+      expect(dots[0].getAttribute('aria-label')).toBe('Go to slide 1 Selected');
+      expect(dots[0].getAttribute('aria-selected')).toBe('true');
+
+      // Check second dot (inactive)
+      expect(dots[1].classList.contains('active')).toBe(false);
+      expect(dots[1].getAttribute('aria-label')).toBe('Go to slide 2');
+      expect(dots[1].getAttribute('aria-selected')).toBe('false');
+    });
+
+    it('does not create navigation for single slide', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(4); // Only 4 items, fits in one slide
+      decorateColumnCarousel(block);
+
+      const nav = block.querySelector('.columns__nav');
+      expect(nav).toBeNull();
+    });
+
+    it('activates first slide initially', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const slides = block.querySelectorAll('.columns__slide');
+      const dots = block.querySelectorAll('.columns__nav-dot');
+
+      expect(slides[0].classList.contains('active')).toBe(true);
+      expect(dots[0].classList.contains('active')).toBe(true);
+      expect(block.dataset.currentSlide).toBe('0');
+    });
+  });
+
+  describe('showSlide functionality', () => {
+    it('updates ARIA attributes correctly when changing slides', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const nextButton = block.querySelectorAll('button.agt-button--secondary')[1];
+      const dots = block.querySelectorAll('.columns__nav-dot');
+
+      // Initially first slide is active
+      expect(dots[0].getAttribute('aria-selected')).toBe('true');
+      expect(dots[0].getAttribute('aria-label')).toBe('Go to slide 1 Selected');
+      expect(dots[1].getAttribute('aria-selected')).toBe('false');
+      expect(dots[1].getAttribute('aria-label')).toBe('Go to slide 2');
+
+      // Click next button
+      nextButton.click();
+
+      // Check ARIA attributes updated
+      expect(dots[0].getAttribute('aria-selected')).toBe('false');
+      expect(dots[0].getAttribute('aria-label')).toBe('Go to slide 1');
+      expect(dots[1].getAttribute('aria-selected')).toBe('true');
+      expect(dots[1].getAttribute('aria-label')).toBe('Go to slide 2 Selected');
+    });
+
+    it('calls scrollTo with correct parameters', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      // Reset mock to clear initial call
+      Element.prototype.scrollTo.mockReset();
+
+      const nextButton = block.querySelectorAll('button.agt-button--secondary')[1];
+      nextButton.click();
+
+      // Check scrollTo was called with the right parameters
+      expect(Element.prototype.scrollTo).toHaveBeenCalledWith({
+        left: expect.any(Number),
+        behavior: 'smooth',
+      });
+    });
+  });
+
+  describe('Navigation Functionality', () => {
+    it('changes active slide when button arrows are clicked', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const slides = block.querySelectorAll('.columns__slide');
+      const dots = block.querySelectorAll('.columns__nav-dot');
+      const buttons = block.querySelectorAll('button.agt-button--secondary');
+      const prevButton = buttons[0];
+      const nextButton = buttons[1];
+
+      // Initially first slide is active
+      expect(slides[0].classList.contains('active')).toBe(true);
+      expect(dots[0].classList.contains('active')).toBe(true);
+
+      // Click next button
+      nextButton.click();
+      expect(slides[0].classList.contains('active')).toBe(false);
+      expect(slides[1].classList.contains('active')).toBe(true);
+      expect(dots[0].classList.contains('active')).toBe(false);
+      expect(dots[1].classList.contains('active')).toBe(true);
+
+      // Click prev button
+      prevButton.click();
+      expect(slides[0].classList.contains('active')).toBe(true);
+      expect(slides[1].classList.contains('active')).toBe(false);
+      expect(dots[0].classList.contains('active')).toBe(true);
+      expect(dots[1].classList.contains('active')).toBe(false);
+    });
+
+    it('cycles through slides correctly', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const slides = block.querySelectorAll('.columns__slide');
+      const nextButton = block.querySelectorAll('button.agt-button--secondary')[1];
+      const prevButton = block.querySelectorAll('button.agt-button--secondary')[0];
+
+      // Go to last slide
+      nextButton.click();
+      expect(slides[1].classList.contains('active')).toBe(true);
+      expect(block.dataset.currentSlide).toBe('1');
+
+      // Click next again to cycle to first slide
+      nextButton.click();
+      expect(slides[0].classList.contains('active')).toBe(true);
+      expect(block.dataset.currentSlide).toBe('0');
+
+      // Click prev to cycle to last slide
+      prevButton.click();
+      expect(slides[1].classList.contains('active')).toBe(true);
+      expect(block.dataset.currentSlide).toBe('1');
+    });
+
+    it('activates corresponding slide when dot is clicked', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(24); // 3 slides
+      decorateColumnCarousel(block);
+
+      const slides = block.querySelectorAll('.columns__slide');
+      const dots = block.querySelectorAll('.columns__nav-dot');
+
+      // Click the second dot
+      dots[1].click();
+      expect(slides[1].classList.contains('active')).toBe(true);
+      expect(dots[1].classList.contains('active')).toBe(true);
+      expect(block.dataset.currentSlide).toBe('1');
+
+      // Click the third dot
+      dots[2].click();
+      expect(slides[2].classList.contains('active')).toBe(true);
+      expect(dots[2].classList.contains('active')).toBe(true);
+      expect(block.dataset.currentSlide).toBe('2');
+    });
+  });
+
+  describe('ARIA Accessibility', () => {
+    it('maintains proper aria-selected values as strings', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(24);
+      decorateColumnCarousel(block);
+
+      const dots = block.querySelectorAll('.columns__nav-dot');
+
+      // Check initial ARIA values are proper strings
+      expect(dots[0].getAttribute('aria-selected')).toBe('true');
+      expect(dots[1].getAttribute('aria-selected')).toBe('false');
+      expect(dots[2].getAttribute('aria-selected')).toBe('false');
+
+      // Navigate and check values remain as proper strings
+      const nextButton = block.querySelectorAll('button.agt-button--secondary')[1];
+      nextButton.click();
+
+      expect(dots[0].getAttribute('aria-selected')).toBe('false');
+      expect(dots[1].getAttribute('aria-selected')).toBe('true');
+      expect(dots[2].getAttribute('aria-selected')).toBe('false');
+    });
+
+    it('updates aria-label with Selected suffix correctly', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const dots = block.querySelectorAll('.columns__nav-dot');
+      const nextButton = block.querySelectorAll('button.agt-button--secondary')[1];
+
+      // Check space handling in Selected suffix
+      expect(dots[0].getAttribute('aria-label')).toBe('Go to slide 1 Selected');
+      expect(dots[1].getAttribute('aria-label')).toBe('Go to slide 2');
+
+      nextButton.click();
+
+      expect(dots[0].getAttribute('aria-label')).toBe('Go to slide 1');
+      expect(dots[1].getAttribute('aria-label')).toBe('Go to slide 2 Selected');
+    });
+  });
+
+  describe('Keyboard Navigation', () => {
+    it('responds to arrow key presses', () => {
+      window.innerWidth = 1024;
+      const block = createTestBlock(16);
+      decorateColumnCarousel(block);
+
+      const slides = block.querySelectorAll('.columns__slide');
+      const dots = block.querySelectorAll('.columns__nav-dot');
+
+      // Initially first slide is active
+      expect(slides[0].classList.contains('active')).toBe(true);
+
+      // Simulate right arrow key press
+      const rightArrowEvent = new KeyboardEvent('keydown', { key: 'ArrowRight' });
+      block.dispatchEvent(rightArrowEvent);
+
+      expect(slides[1].classList.contains('active')).toBe(true);
+      expect(dots[1].getAttribute('aria-selected')).toBe('true');
+
+      // Simulate left arrow key press
+      const leftArrowEvent = new KeyboardEvent('keydown', { key: 'ArrowLeft' });
+      block.dispatchEvent(leftArrowEvent);
+
+      expect(slides[0].classList.contains('active')).toBe(true);
+      expect(dots[0].getAttribute('aria-selected')).toBe('true');
+    });
+  });
+});

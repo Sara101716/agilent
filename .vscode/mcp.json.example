@@ -1,0 +1,22 @@
+// Required figma token Scopes:
+// file_dev_resources:read - Read dev resources like code syntax
+// file_content:read - Read file contents and nodes
+// file_metadata:read - Read file metadata
+// file_versions:read - Read file version history
+// library_assets:read - Read library assets
+// library_content:read - Read library content
+// current_user:read - Read current user info (also mentioned in error)
+
+// Copy below to .vscode/mcp.json file and update the token
+{
+  "mcpServers": {
+    "figma-developer-mcp": {
+      "command": "npx",
+      "args": [
+        "figma-developer-mcp",
+        "--figma-api-key=FIGMA-API-TOKEN",
+        "--stdio"
+      ]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+.search-results__tab-content {
+  display: flex;
+  gap: var(--agt-spacing-20);
+}
+
+.search-results__tab-content.hidden {
+  display: none;
+}
+
+@media (width > 1024px) {
+  .search-results__filters-wrapper.filters--no-facets {
+    display: none;
+  }
+}

@@ -1,0 +1,168 @@
+import {
+  html, replaceParentWithChildrens, hasOnlyLinksAsChild, getBlockOptions,
+} from '../../scripts/helpers/index.js';
+
+describe('html', () => {
+  it('should render a simple HTML string as HTML', () => {
+    const el = html`<div>Test</div>`;
+    expect(el.outerHTML).toBe('<div>Test</div>');
+  });
+
+  it('should render the HTML string replacing the string type variable with the value', () => {
+    const name = 'Test';
+    const el = html`<div>${name}</div>`;
+
+    expect(el.outerHTML).toBe('<div>Test</div>');
+  });
+
+  it('should render the HTML string replacing the HTMLElement variable with exactly the same element', () => {
+    const name = document.createElement('div');
+    name.textContent = 'Test';
+    const el = html`<div>${name}</div>`;
+
+    expect(el.outerHTML).toBe('<div><div>Test</div></div>');
+    expect(el.querySelector('div')).toBe(name);
+  });
+
+  it('should render the HTML string replacing the array of HTMLElement variable with the same elements', () => {
+    const name1 = document.createElement('div');
+    name1.textContent = 'Test1';
+    const name2 = document.createElement('div');
+    name2.textContent = 'Test2';
+    const el = html`<div>${[name1, name2]}</div>`;
+
+    expect(el.outerHTML).toBe('<div><div>Test1</div><div>Test2</div></div>');
+    expect(el.querySelectorAll('div').length).toBe(2);
+    expect(el.querySelectorAll('div')[0]).toBe(name1);
+    expect(el.querySelectorAll('div')[1]).toBe(name2);
+  });
+
+  it('should render the HTML string replacing the array of strings variable with the same elements', () => {
+    const name1 = 'Test1';
+    const name2 = 'Test2';
+    const el = html`<div>${[name1, name2]}</div>`;
+
+    expect(el.outerHTML).toBe('<div>Test1Test2</div>');
+  });
+
+  it('should return the array of elements when the HTML string has more then one root element', () => {
+    const el = html`<li>Test1</li><li>Test2</li>`;
+
+    expect(el.length).toBe(2);
+    expect(el[0].outerHTML).toBe('<li>Test1</li>');
+    expect(el[1].outerHTML).toBe('<li>Test2</li>');
+  });
+
+  it('should allow to nest the html template function', () => {
+    const el = html`<div>${html`<span>Test</span>`}</div>`;
+
+    expect(el.outerHTML).toBe('<div><span>Test</span></div>');
+  });
+
+  it('should render the elements attributes', () => {
+    const el = html`<div class="test" id="test">Test</div>`;
+
+    expect(el.outerHTML).toBe('<div class="test" id="test">Test</div>');
+  });
+
+  it('should render the elements attributes with the value of the variable', () => {
+    const id = 'test';
+    const el = html`<div class="test" id=${id}>Test</div>`;
+
+    expect(el.outerHTML).toBe('<div class="test" id="test">Test</div>');
+  });
+});
+
+describe('replaceParentWithChildrens', () => {
+  it('should replace the parent element with its children', () => {
+    const wrapper = document.createElement('div');
+    const parent = document.createElement('div');
+    const child1 = document.createElement('span');
+    const child2 = document.createElement('span');
+    child1.textContent = 'Child 1';
+    child2.textContent = 'Child 2';
+    parent.append(child1, child2);
+    wrapper.append(parent);
+
+    replaceParentWithChildrens(child1);
+
+    expect(wrapper.outerHTML).toBe('<div><span>Child 1</span><span>Child 2</span></div>');
+  });
+
+  it('should do nothing if the element has no parent', () => {
+    const el = document.createElement('div');
+    replaceParentWithChildrens(el);
+    expect(el.outerHTML).toBe('<div></div>');
+  });
+});
+
+describe('hasOnlyLinksAsChild', () => {
+  it('should return true if the element has only links as children', () => {
+    const el = document.createElement('div');
+    const link1 = document.createElement('a');
+    link1.href = '#';
+    const link2 = document.createElement('a');
+    link2.href = '#';
+    el.append(link1, link2);
+
+    expect(hasOnlyLinksAsChild(el)).toBe(true);
+  });
+
+  it('should return false if the element has other elements as children', () => {
+    const el = document.createElement('div');
+    const link1 = document.createElement('a');
+    link1.href = '#';
+    const span = document.createElement('span');
+    el.append(link1, span);
+
+    expect(hasOnlyLinksAsChild(el)).toBe(false);
+  });
+});
+
+describe('getBlockOptions', () => {
+  it('should return and empty object if block has no rows', () => {
+    const block = document.createElement('div');
+    block.innerHTML = '';
+
+    const options = getBlockOptions(block);
+
+    expect(options).toEqual({});
+  });
+
+  it('should return an empty object if the block has only 1 column', () => {
+    const block = document.createElement('div');
+    block.innerHTML = '<div class="block-row"><div class="block-column"></div></div>';
+
+    const options = getBlockOptions(block);
+
+    expect(options).toEqual({});
+  });
+
+  it('should return the provided options', () => {
+    const block = document.createElement('div');
+    block.innerHTML = `
+      <div class="block-row">
+        <div class="block-column">key</div>
+        <div class="block-column">value</div>
+      </div>
+    `;
+    const options = ['key'];
+    const result = getBlockOptions(block, options);
+
+    expect(result).toEqual({ key: 'value' });
+  });
+
+  it('should return emmpty obejct if expected options is an empty array', () => {
+    const options = [];
+    const block = document.createElement('div');
+    block.innerHTML = `
+      <div class="block-row">
+        <div class="block-column">key</div>
+        <div class="block-column">value</div>
+      </div>
+    `;
+    const result = getBlockOptions(block, options);
+
+    expect(result).toEqual({});
+  });
+});

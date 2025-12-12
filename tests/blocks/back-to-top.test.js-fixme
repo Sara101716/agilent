@@ -1,0 +1,116 @@
+import { jest } from '@jest/globals';
+import decorate from '../../blocks/back-to-top/back-to-top.js';
+
+beforeAll(() => {
+  window.hlx = {
+    codeBasePath: '/mock-path',
+    rum: { isOn: false },
+  };
+
+  global.fetch = jest.fn(() => Promise.resolve({
+    ok: true,
+    text: () => Promise.resolve('<svg>mock icon</svg>'),
+  }));
+
+  window.matchMedia = window.matchMedia || function () {
+    return {
+      matches: false,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    };
+  };
+});
+
+jest.mock('../../scripts/aem.js', () => ({
+  decorateIcons: jest.fn((block) => {
+    const icons = block.querySelectorAll('.icon');
+    icons.forEach((icon) => {
+      const div = document.createElement('div');
+      div.innerHTML = '<svg>mock icon</svg>';
+      icon.appendChild(div.firstChild);
+    });
+  }),
+}));
+
+jest.mock('../../scripts/helpers/index.js', () => ({
+  getPlaceholder: jest.fn((text) => `Placeholder: ${text}`),
+  html: jest.fn((strings) => {
+    const element = document.createElement('div');
+    element.innerHTML = strings.join('');
+    return element.firstChild;
+  }),
+}));
+
+describe('Back-to-Top Block', () => {
+  let block;
+  let windowScrollToSpy;
+
+  beforeEach(() => {
+    block = document.createElement('div');
+    const main = document.createElement('main');
+    const firstChild = document.createElement('div');
+    main.appendChild(firstChild);
+    document.body.appendChild(main);
+
+    windowScrollToSpy = jest.spyOn(window, 'scrollTo').mockImplementation(() => { });
+    global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+      observe: jest.fn(),
+      disconnect: jest.fn(),
+    }));
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+    windowScrollToSpy.mockRestore();
+    jest.clearAllMocks();
+  });
+
+  test('adds back-to-top class to the block', () => {
+    decorate(block);
+    expect(block.classList.contains('back-to-top')).toBe(true);
+  });
+
+  test('creates a back-to-top link with correct attributes', () => {
+    decorate(block);
+    const link = block.querySelector('button.back-to-top__link');
+    expect(link.getAttribute('aria-label')).toBe('Back to Top');
+  });
+
+  test('scrolls to top when link is clicked', () => {
+    decorate(block);
+    const link = block.querySelector('button.back-to-top__link');
+    const mockEvent = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+    });
+    mockEvent.preventDefault = jest.fn();
+    link.dispatchEvent(mockEvent);
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+    expect(windowScrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+  });
+
+  test('button visibility changes based on scroll position', () => {
+    decorate(block);
+    expect(block.classList.contains('hidden')).toBe(true);
+
+    block.classList.remove('hidden');
+    expect(block.classList.contains('hidden')).toBe(false);
+
+    block.classList.add('hidden');
+    expect(block.classList.contains('hidden')).toBe(true);
+  });
+
+  test('does not observe if firstBlock is not found', () => {
+    document.body.innerHTML = '';
+    const observeSpy = jest.fn();
+    global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+      observe: observeSpy,
+      disconnect: jest.fn(),
+    }));
+    decorate(block);
+    expect(observeSpy).not.toHaveBeenCalled();
+  });
+});

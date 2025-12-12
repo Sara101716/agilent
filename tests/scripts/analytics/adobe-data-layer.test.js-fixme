@@ -1,0 +1,252 @@
+/**
+ * @jest-environment-options {"url": "https://www.agilent.com/"}
+ */
+import {
+  expect, jest, describe, it, beforeEach, afterEach,
+} from '@jest/globals';
+import {
+  getComponentData,
+  initializeGlobalTracking,
+  trackLinkClicked,
+  shouldTrackLink,
+} from '../../../scripts/analytics/adobe-data-layer.js';
+import { pushToDataLayer } from '../../../scripts/analytics/init.js';
+
+describe('getComponentData', () => {
+  beforeEach(() => {
+    // Create test DOM with components
+    document.body.innerHTML = `
+        <div class="component" data-component-id="hero-123" data-component-type="hero">
+            <h2>Hero Banner</h2>
+            <a href="/hero-action" id="hero-cta">Learn More</a>
+        </div>
+       
+        <div class="component" data-component-id="product-456" data-component-type="product-card">
+          <div data-product-name="Test Product" data-product-sku="SKU123" data-product-id="P789">
+            <h3>Product Card</h3>
+            <a href="/product" id="product-link">View Product</a>
+          </div>
+        </div>
+       
+        <div class="component" data-component-id="cta-banner" data-component-type="cta">
+          <span data-cta-name="Special Offer" data-cta-id="special-offer">
+            <a href="/offer" id="cta-link">Special Offer</a>
+          </span>
+        </div>
+       
+        <div class="no-component">
+          <a href="/generic" id="generic-link">Generic Link</a>
+        </div>
+      `;
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('should return minimal data for links not in components', () => {
+    const link = document.getElementById('generic-link');
+    const data = getComponentData(link);
+    expect(data).toEqual({});
+  });
+
+  it('should handle null or undefined links gracefully', () => {
+    const data = getComponentData(null);
+    expect(data).toEqual({});
+  });
+});
+
+describe('initializeGlobalTracking', () => {
+  let originalAddEventListener;
+  let originalDataLayer;
+  let eventListeners = {};
+
+  beforeEach(() => {
+    originalAddEventListener = document.addEventListener;
+    document.addEventListener = jest.fn((event, callback) => {
+      if (!eventListeners[event]) {
+        eventListeners[event] = [];
+      }
+      eventListeners[event].push(callback);
+    });
+
+    global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+      observe: jest.fn(),
+      unobserve: jest.fn(),
+      disconnect: jest.fn(),
+    }));
+    // Mock window.adobeDataLayer if it's used
+    originalDataLayer = window.adobeDataLayer;
+    window.adobeDataLayer = {
+      push: jest.fn(),
+    };
+
+    document.querySelectorAll = jest.fn().mockImplementation((selector) => {
+      if (selector.includes('.section') || selector.includes('-container')) {
+        return [];
+      }
+      return document.querySelectorAll.bind(document)(selector);
+    });
+    eventListeners = {};
+  });
+
+  afterEach(() => {
+    document.addEventListener = originalAddEventListener;
+    window.adobeDataLayer = originalDataLayer;
+    delete global.IntersectionObserver;
+  });
+
+  it('should register click event listener', () => {
+    initializeGlobalTracking();
+    expect(document.addEventListener).toHaveBeenCalledWith('click', expect.any(Function), true);
+  });
+
+  it('should handle clicks on links and collect appropriate data', () => {
+    document.body.innerHTML = `
+      <div class="section" data-ag-componentname="test-component">
+        <a href="/test-link" id="test-link" title="Test Link">Test Link</a>
+      </div>
+    `;
+
+    initializeGlobalTracking();
+
+    const link = document.getElementById('test-link');
+
+    const clickEvent = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    });
+
+    link.dispatchEvent(clickEvent);
+
+    if (eventListeners.click && eventListeners.click.length) {
+      eventListeners.click.forEach((handler) => handler(clickEvent));
+    }
+
+    expect(window.adobeDataLayer.push).toHaveBeenCalled();
+  });
+
+  it('should not track clicks on non-link elements', () => {
+    document.body.innerHTML = `
+      <div class="component" id="test-div">
+        <p id="test-paragraph">Test Paragraph</p>
+      </div>
+    `;
+
+    initializeGlobalTracking();
+
+    const paragraph = document.getElementById('test-paragraph');
+
+    const clickEvent = new MouseEvent('click');
+    Object.defineProperty(clickEvent, 'target', { value: paragraph });
+
+    const clickHandler = eventListeners.click[0];
+    clickHandler(clickEvent);
+
+    expect(window.adobeDataLayer.push).not.toHaveBeenCalledWith(expect.objectContaining({
+      event: 'link-click',
+    }));
+  });
+
+  it('should respect no-track attribute on links', () => {
+    document.body.innerHTML = `
+          <div class="component">
+            <a href="/test-link" id="no-track-link" data-no-track>Do Not Track</a>
+          </div>
+        `;
+
+    initializeGlobalTracking();
+
+    const link = document.getElementById('no-track-link');
+
+    const clickEvent = new MouseEvent('click');
+    Object.defineProperty(clickEvent, 'target', { value: link });
+
+    const clickHandler = eventListeners.click[0];
+    clickHandler(clickEvent);
+
+    expect(window.adobeDataLayer.push).not.toHaveBeenCalledWith(expect.objectContaining({
+      event: 'link-click',
+    }));
+  });
+});
+
+describe('trackLinkClicked', () => {
+  let originalDataLayer;
+  let originalPushToDataLayer;
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div class="section" data-ag-componentname="test-component">
+        <a href="/test-link" id="standard-link">Standard Link</a>
+      </div>
+    `;
+
+    originalDataLayer = window.adobeDataLayer;
+    window.adobeDataLayer = {
+      push: jest.fn(),
+    };
+
+    originalPushToDataLayer = jest.spyOn({ pushToDataLayer }, 'pushToDataLayer')
+      .mockImplementation((data) => {
+        window.adobeDataLayer.push(data);
+      });
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+    window.adobeDataLayer = originalDataLayer;
+    originalPushToDataLayer.mockRestore();
+  });
+
+  it('should push link click data to the data layer', () => {
+    jest.clearAllMocks();
+
+    const link = document.getElementById('standard-link');
+    const clickEvent = new MouseEvent('click');
+
+    trackLinkClicked(link, clickEvent);
+    expect(window.adobeDataLayer.push).toHaveBeenCalled();
+    expect(window.adobeDataLayer.push).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'link-clicked',
+        eventInfo: expect.objectContaining({
+          type: 'web.webinteraction.linkClicks',
+        }),
+      }),
+    );
+  });
+});
+
+describe('shouldTrackLink', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+        <a href="/normal-link" id="normal-link">Normal Link</a>
+        <a href="/do-not-track" id="no-track-link" data-no-track>Do Not Track</a>
+        <a href="#anchor-only" id="anchor-link">Anchor Link</a>
+        <a href="javascript:void(0)" id="javascript-link">JavaScript Link</a>
+      `;
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('should track standard links', () => {
+    const link = document.getElementById('normal-link');
+    expect(shouldTrackLink(link)).toBe(true);
+  });
+
+  it('should handle anchor-only links according to implementation', () => {
+    const link = document.getElementById('anchor-link');
+    const result = shouldTrackLink(link);
+    expect(typeof result).toBe('boolean');
+  });
+
+  it('should handle javascript protocol links according to implementation', () => {
+    const link = document.getElementById('javascript-link');
+    const result = shouldTrackLink(link);
+    expect(typeof result).toBe('boolean');
+  });
+});

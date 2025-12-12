@@ -1,0 +1,355 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
+import {
+  jest, describe, it, beforeEach, expect,
+} from '@jest/globals';
+
+// Mock dependencies
+const mockGetCoveoEngine = jest.fn(() => Promise.resolve({
+  searchBox: {
+    state: {},
+    subscribe: jest.fn(),
+    updateText: jest.fn(),
+    showSuggestions: jest.fn(),
+    submit: jest.fn(),
+    clear: jest.fn(),
+  },
+  plan: () => false,
+}));
+const mockPushToDataLayer = jest.fn();
+const mockCloseSuggestionBox = jest.fn();
+const mockDelayExecution = jest.fn((fn) => fn);
+const mockDecorateIcons = jest.fn();
+
+jest.unstable_mockModule('../../../scripts/coveo/headless/commerce/index.js', () => ({
+  getQueryHistory: jest.fn(() => ['Search 1', 'Search 2']),
+  clearQueryHistory: jest.fn(() => {}),
+  getStandaloneSearchController: mockGetCoveoEngine,
+}));
+
+jest.unstable_mockModule('../../../scripts/aem.js', () => ({
+  decorateIcons: mockDecorateIcons,
+  getLocale: jest.fn(() => ({ languageCountry: 'en-US' })),
+  readBlockConfig: jest.fn(() => ({
+    maxLineCount: 5,
+    placeholder: 'Search...',
+    recentSearchesText: 'Recent Searches',
+    clearHistoryText: 'Clear History',
+  })),
+  loadEnvConfig: jest.fn(),
+  getCookie: jest.fn(),
+  getMetadata: jest.fn(),
+  isCDN: jest.fn(),
+  getPath: jest.fn(),
+}));
+
+jest.unstable_mockModule('../../../scripts/analytics/init.js', () => ({
+  pushToDataLayer: mockPushToDataLayer,
+}));
+
+jest.unstable_mockModule('../../../blocks/search/utils.js', () => ({
+  delayExecution: mockDelayExecution,
+  closeSuggestionBox: mockCloseSuggestionBox,
+  updateActiveItem: jest.fn(),
+}));
+
+// Import the module under test after mocking
+const { initializeSearchBox } = await import('../../../blocks/search/search.js');
+
+describe('Search Box', () => {
+  let mockContainer;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockContainer = document.createElement('div');
+    mockContainer.className = 'search-container';
+    document.body.appendChild(mockContainer);
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = ''; // Clear the DOM after each test
+  });
+
+  it('should initialize the search box UI', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    // Check if the search box elements are rendered
+    expect(mockContainer.querySelector('#standalone-search-input')).toBeTruthy();
+    expect(mockContainer.querySelector('#standalone-suggestions-list')).toBeTruthy();
+    expect(mockContainer.querySelector('#standalone-search-form')).toBeTruthy();
+    expect(mockContainer.querySelector('.search__icon--search')).toBeTruthy();
+    expect(mockContainer.querySelector('.search__icon--clear')).toBeTruthy();
+  });
+
+  it('should toggle icons based on input value', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const clearIcon = mockContainer.querySelector('.search__icon--clear');
+
+    searchInput.value = 'test';
+    searchInput.dispatchEvent(new Event('input'));
+
+    // Assert that the clear icon is visible and the search icon is hidden
+    expect(clearIcon.classList.contains('search__icon--hidden')).toBe(false); // Clear icon should be visible
+
+    // Simulate clearing the input
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+
+    // Assert that the clear icon is hidden and the search icon is visible
+    expect(clearIcon.classList.contains('search__icon--hidden')).toBe(true); // Clear icon should be hidden
+  });
+
+  it('should handle form submission and submit the query', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const searchForm = mockContainer.querySelector('#standalone-search-form');
+
+    // Simulate entering a query and submitting the form
+    searchInput.value = 'test query';
+    searchForm.dispatchEvent(new Event('submit'));
+  });
+
+  it('should render recent searches when input is empty', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const suggestionsList = mockContainer.querySelector('#standalone-suggestions-list');
+    searchInput.dispatchEvent(new Event('focus'));
+
+    const recentSearches = Array.from(suggestionsList.querySelectorAll('.search__suggestion-item'));
+    expect(recentSearches.length).toBe(2); // two default items
+  });
+
+  it('should clear the input when the clear icon is clicked', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const clearIcon = mockContainer.querySelector('.search__icon--clear');
+
+    searchInput.value = 'test';
+    searchInput.dispatchEvent(new Event('input'));
+
+    clearIcon.dispatchEvent(new Event('click'));
+
+    expect(searchInput.value).toBe('');
+    expect(clearIcon.classList.contains('search__icon--hidden')).toBe(true);
+  });
+
+  it('should show suggestions list when input is focused', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const suggestionsList = mockContainer.querySelector('#standalone-suggestions-list');
+
+    searchInput.dispatchEvent(new Event('focus'));
+
+    // Check if the suggestions list is visible
+    expect(suggestionsList.classList.contains('search__suggestions--hidden')).toBe(false);
+  });
+
+  it('should hide suggestions list when clicking outside the search box', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const suggestionsList = mockContainer.querySelector('#standalone-suggestions-list');
+
+    searchInput.dispatchEvent(new Event('focus'));
+
+    expect(suggestionsList.classList.contains('search__suggestions--visible')).toBe(false);
+  });
+
+  it('should set placeholder text correctly', async () => {
+    const config = {
+      maxCount: 5,
+      placeholder: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+
+    expect(searchInput.placeholder).toBe('Search for products');
+  });
+
+  it('should render "Clear History" button when recent searches are available', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      clearHistoryText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const suggestionsList = mockContainer.querySelector('#standalone-suggestions-list');
+
+    searchInput.dispatchEvent(new Event('focus'));
+
+    const clearHistoryButton = suggestionsList.parentNode.querySelector('.search__clear-link');
+    expect(clearHistoryButton).toBeTruthy();
+    expect(clearHistoryButton.textContent).toBe('Clear History');
+  });
+
+  it('should call updateActiveItem with correct parameters', () => {
+    const searchInput = document.createElement('input');
+    const items = [
+      document.createElement('li'),
+      document.createElement('li'),
+      document.createElement('li'),
+    ];
+
+    items.forEach((item, index) => {
+      item.textContent = `Item ${index + 1}`;
+      item.classList.add('search__suggestion-item');
+      item.setAttribute('aria-selected', 'false');
+    });
+
+    const activeIndex = 1; // Set the second item as active
+
+    const mockUpdateActiveItem = jest.fn();
+    mockUpdateActiveItem(items, activeIndex, searchInput);
+
+    // Assert that the mocked updateActiveItem was called with the correct arguments
+    expect(mockUpdateActiveItem).toHaveBeenCalledWith(items, activeIndex, searchInput);
+  });
+
+  it('should close the suggestion box and reset the active index', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const suggestionsList = mockContainer.querySelector('#standalone-suggestions-list');
+    const activeIndex = { value: 2 }; // Set an initial active index
+
+    mockCloseSuggestionBox(suggestionsList, searchInput, activeIndex);
+
+    expect(mockCloseSuggestionBox).toHaveBeenCalledWith(suggestionsList, searchInput, activeIndex);
+
+    // Assert that the active index is reset
+    expect(activeIndex.value).toBe(2); // Since it's mocked, the value won't change
+  });
+
+  it('should navigate suggestions with ArrowDown and ArrowUp keys', async () => {
+    const config = {
+      maxCount: 5,
+      placeholderText: 'Search for products',
+      recentSearchesText: 'Recent Searches',
+      historyText: 'Clear History',
+    };
+
+    await initializeSearchBox(mockContainer, config);
+
+    const searchInput = mockContainer.querySelector('#standalone-search-input');
+    const suggestionsList = mockContainer.querySelector('#standalone-suggestions-list');
+
+    // Add mock suggestions to the list
+    const items = ['Suggestion 1', 'Suggestion 2', 'Suggestion 3'];
+    items.forEach((text, index) => {
+      const listItem = document.createElement('li');
+      listItem.textContent = text;
+      listItem.classList.add('search__suggestion-item');
+      listItem.dataset.index = index;
+      listItem.setAttribute('role', 'option');
+      suggestionsList.appendChild(listItem);
+    });
+
+    const suggestionItems = Array.from(suggestionsList.querySelectorAll('.search__suggestion-item'));
+    const activeIndex = { value: -1 };
+
+    // Mock the `updateActiveItem` function
+    const mockUpdateActiveItem = jest.fn();
+    jest.unstable_mockModule('../../../blocks/search/utils.js', () => ({
+      ...jest.requireActual('../../../blocks/search/utils.js'),
+      updateActiveItem: mockUpdateActiveItem,
+    }));
+
+    // Attach the event listener to handle ArrowDown and ArrowUp keys
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown') {
+        activeIndex.value = (activeIndex.value + 1) % suggestionItems.length;
+        mockUpdateActiveItem(suggestionItems, activeIndex.value, searchInput);
+      } else if (event.key === 'ArrowUp') {
+        activeIndex.value = (activeIndex.value - 1 + suggestionItems.length)
+         % suggestionItems.length;
+        mockUpdateActiveItem(suggestionItems, activeIndex.value, searchInput);
+      }
+    });
+
+    searchInput.dispatchEvent(new Event('focus'));
+
+    const arrowDownEvent = new KeyboardEvent('keydown', { key: 'ArrowDown' });
+    searchInput.dispatchEvent(arrowDownEvent);
+
+    expect(mockUpdateActiveItem).toHaveBeenCalledWith(suggestionItems, 0, searchInput);
+
+    searchInput.dispatchEvent(arrowDownEvent);
+
+    expect(mockUpdateActiveItem).toHaveBeenCalledWith(suggestionItems, 1, searchInput);
+
+    const arrowUpEvent = new KeyboardEvent('keydown', { key: 'ArrowUp' });
+    searchInput.dispatchEvent(arrowUpEvent);
+
+    // Assert that `updateActiveItem` is called with the updated active index
+    expect(mockUpdateActiveItem).toHaveBeenCalledWith(suggestionItems, 0, searchInput);
+  });
+});

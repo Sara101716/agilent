@@ -1,0 +1,282 @@
+import decorate from '../../blocks/hero/hero.js';
+
+describe('hero banner', () => {
+  let blockWrapper;
+  let block;
+
+  beforeEach(() => {
+    blockWrapper = document.createElement('div');
+    blockWrapper.classList.add('hero-wrapper');
+    window.hlx = window.hlx || {};
+    window.hlx.codeBasePath = '/mocked/path';
+  });
+
+  describe('one slide', () => {
+    beforeEach(() => {
+      blockWrapper.innerHTML = `
+      <div class="hero block" data-block-name="hero" data-block-status="loading">
+        <div>
+          <div>
+            <p>
+              <picture>
+                <source type="image/webp" srcset="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=2000&amp;format=webply&amp;optimize=medium" media="(min-width: 600px)">
+                <source type="image/webp" srcset="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=webply&amp;optimize=medium">
+                <source type="image/avif" srcset="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=2000&amp;format=avif&amp;optimize=medium" media="(min-width: 600px)">
+                <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+              </picture>
+            </p>
+            <h1 id="label-ivdthe-future-of-innovation-is-now-3"><span class="regulatory-label">IVD</span>The Future of Innovation is Now</h1>
+            <p>Optimize your lab with precision instruments and advanced workflow solutions</p>
+            <p class="button-container"><strong><a href="/" title="See Product" class="button agt-button--primary">See Product</a></strong></p>
+            <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action">See our technology in action</a></p>
+          </div>
+        </div>
+      </div>`;
+
+      block = blockWrapper.querySelector('.hero');
+      decorate(block);
+    });
+
+    it('should render one slide', () => {
+      expect(block).toBeDefined();
+      expect(block.querySelectorAll('.hero__slide').length).toBe(1);
+    });
+
+    it('should not render navigation', () => {
+      expect(block.querySelector('.hero__navigation')).toBeNull();
+    });
+  });
+
+  describe('with multiple slides', () => {
+    beforeEach(() => {
+      blockWrapper.innerHTML = `
+        <div class="hero block" data-block-name="hero" data-block-status="loading">
+          <div>
+            <div>
+              <p>
+                <picture>
+                  <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+                </picture>
+              </p>
+              <h1 id="first-slide-heading">First slide heading</h1>
+              <p>First slide description</p>
+              <p class="button-container"><strong><a href="/" title="See Product" class="button agt-button--primary">See Product</a></strong></p>
+              <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action">See our technology in action</a></p>
+            </div>
+          </div>
+          <div>
+            <div>
+              <p>
+                <picture>
+                  <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+                </picture>
+              </p>
+              <h1 id="second-slide-heading">Second slide heading</h1>
+              <p>Second slide description</p>
+              <p class="button-container"><strong><a href="/" title="See Product 2" class="button agt-button--primary">See Product 2</a></strong></p>
+              <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action 2">See our technology in action 2</a></p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      block = blockWrapper.querySelector('.hero');
+      decorate(block);
+    });
+
+    it('should render all slides', () => {
+      expect(block).toBeDefined();
+      expect(block.querySelectorAll('.hero__slide').length).toBe(2);
+    });
+
+    it('should render navigation with buttons', () => {
+      expect(block.querySelector('.hero__navigation')).toBeDefined();
+      expect(block.querySelector('.hero__navigation .hero__navigation-button--prev')).toBeDefined();
+      expect(block.querySelector('.hero__navigation .hero__navigation-button--next')).toBeDefined();
+      expect(block.querySelectorAll('.hero__navigation-indicator').length).toBe(2);
+      expect(block.querySelector('.hero__navigation-button--pause')).toBeDefined();
+      expect(block.querySelector('.hero__navigation-button--play')).toBeDefined();
+    });
+
+    it('should render the first slide as active', () => {
+      expect(block.querySelector('.hero__slide--active')).toBeDefined();
+      expect(block.querySelector('.hero__slide--active h1').id).toBe('first-slide-heading');
+    });
+
+    it('should render the first navigation indicator as active', () => {
+      expect(block.querySelector('.hero__navigation-indicator[aria-selected="true"]')).toBeDefined();
+      expect(block.querySelector('.hero__navigation-indicator[aria-selected="true"]').getAttribute('aria-label')).toBe('Slide 1 of 2 Selected');
+    });
+  });
+
+  describe('render the content', () => {
+    beforeEach(() => {
+      blockWrapper.innerHTML = `
+        <div class="hero block" data-block-name="hero" data-block-status="loading">
+          <div>
+            <div>
+              <p>
+                <picture>
+                  <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+                </picture>
+              </p>
+              <h1 id="first-slide-heading"><span class="regulatory-label">IVD</span>First slide heading</h1>
+              <p>First slide description</p>
+              <p class="button-container"><strong><a href="/" title="See Product" class="button agt-button--primary">See Product</a></strong></p>
+              <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action">See our technology in action</a></p>
+            </div>
+          </div>
+          <div>
+            <div>
+              <p>
+                <picture>
+                  <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+                </picture>
+              </p>
+              <h1 id="second-slide-heading">Second slide heading</h1>
+              <p>Second slide description</p>
+              <p class="button-container"><strong><a href="/" title="See Product 2" class="button agt-button--primary">See Product 2</a></strong></p>
+              <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action 2">See our technology in action 2</a></p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      block = blockWrapper.querySelector('.hero');
+      decorate(block);
+    });
+
+    it('should render the regulatory label', () => {
+      expect(block.querySelector('.regulatory-label')).toBeDefined();
+      expect(block.querySelector('.regulatory-label').textContent).toBe('IVD');
+    });
+
+    it('should render the slide headings', () => {
+      const headings = block.querySelectorAll('h1');
+      expect(headings.length).toBe(2);
+      expect(headings[0].textContent).toBe('IVDFirst slide heading');
+      expect(headings[1].textContent).toBe('Second slide heading');
+    });
+
+    it('should render the slide descriptions', () => {
+      const descriptions = block.querySelectorAll('p');
+      expect(descriptions.length).toBe(2);
+      expect(descriptions[0].textContent).toBe('First slide description');
+      expect(descriptions[1].textContent).toBe('Second slide description');
+    });
+
+    it('should render the buttons', () => {
+      const buttons = block.querySelectorAll('.agt-button');
+      expect(buttons.length).toBe(4);
+      expect(buttons[0].textContent).toBe('See Product');
+      expect(buttons[1].textContent).toBe('See our technology in action');
+      expect(buttons[2].textContent).toBe('See Product 2');
+      expect(buttons[3].textContent).toBe('See our technology in action 2');
+    });
+
+    it('should render proper buttons styles', () => {
+      const buttons = block.querySelectorAll('.agt-button');
+      expect(buttons[0].classList.contains('agt-button--primary')).toBe(true);
+      expect(buttons[1].classList.contains('agt-button--ghost-dark')).toBe(true);
+      expect(buttons[2].classList.contains('agt-button--primary')).toBe(true);
+      expect(buttons[3].classList.contains('agt-button--ghost-dark')).toBe(true);
+    });
+  });
+
+  describe('should change slide', () => {
+    beforeEach(() => {
+      blockWrapper.innerHTML = `
+        <div class="hero block" data-block-name="hero" data-block-status="loading">
+          <div>
+            <div>
+              <p>
+                <picture>
+                  <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+                </picture>
+              </p>
+              <h1 id="first-slide-heading">First slide heading</h1>
+              <p>First slide description</p>
+              <p class="button-container"><strong><a href="/" title="See Product" class="button agt-button--primary">See Product</a></strong></p>
+              <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action">See our technology in action</a></p>
+            </div>
+          </div>
+          <div>
+            <div>
+              <p>
+                <picture>
+                  <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+                </picture>
+              </p>
+              <h1 id="second-slide-heading">Second slide heading</h1>
+              <p>Second slide description</p>
+              <p class="button-container"><strong><a href="/" title="See Product 2" class="button agt-button--primary">See Product 2</a></strong></p>
+              <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action 2">See our technology in action 2</a></p>
+            </div>
+          </div>
+          <div>
+            <div>
+              <p>
+                <picture>
+                  <img loading="lazy" alt="" src="./media_1bf0de6431341ddeecd1151434eeebb4a000888e4.avif?width=750&amp;format=avif&amp;optimize=medium" width="2048" height="1372">
+                </picture>
+              </p>
+              <h1 id="second-slide-heading">Third slide heading</h1>
+              <p>Third slide description</p>
+              <p class="button-container"><strong><a href="/" title="See Product 3" class="button agt-button--primary">See Product 3</a></strong></p>
+              <p><a href="https://www.agilent.com/en/product/gas-chromatography" title="See our technology in action 3">See our technology in action 3</a></p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      block = blockWrapper.querySelector('.hero');
+      decorate(block);
+    });
+
+    it('should change to the next slide when clicking next button', () => {
+      const nextButton = block.querySelector('.hero__navigation-button--next');
+      nextButton.click();
+      expect(block.querySelector('.hero__slide--active h1').id).toBe('second-slide-heading');
+      expect(block.querySelector('.hero__navigation-indicator[aria-selected="true"]').getAttribute('aria-label')).toBe('Slide 2 of 3 Selected');
+    });
+
+    it('should change to the previous slide when clicking prev button', () => {
+      const nextButton = block.querySelector('.hero__navigation-button--next');
+      const prevButton = block.querySelector('.hero__navigation-button--prev');
+      nextButton.click(); // Go to second slide
+      expect(block.querySelector('.hero__slide--active h1').id).toBe('second-slide-heading');
+      prevButton.click(); // Go back to first slide
+      expect(block.querySelector('.hero__slide--active h1').id).toBe('first-slide-heading');
+    });
+
+    it('should pause the autoplay when clicking pause button', () => {
+      const pauseButton = block.querySelector('.hero__navigation-button--pause');
+      const playButton = block.querySelector('.hero__navigation-button--play');
+      pauseButton.click();
+      expect(pauseButton.style.display).toBe('none');
+      expect(playButton.style.display).toBe('block');
+    });
+
+    it('should resume the autoplay when clicking play button', () => {
+      const pauseButton = block.querySelector('.hero__navigation-button--pause');
+      const playButton = block.querySelector('.hero__navigation-button--play');
+      pauseButton.click(); // Pause first
+      playButton.click(); // Then play
+      expect(pauseButton.style.display).toBe('block');
+      expect(playButton.style.display).toBe('none');
+    });
+
+    it('should change slide when clicking on navigation indicator', () => {
+      const indicators = block.querySelectorAll('.hero__navigation-indicator');
+      indicators[1].click();
+      expect(block.querySelector('.hero__slide--active h1').id).toBe('second-slide-heading');
+      expect(block.querySelector('.hero__navigation-indicator[aria-selected="true"]').getAttribute('aria-label')).toBe('Slide 2 of 3 Selected');
+    });
+
+    it('should not change slide when clicking on the active navigation indicator', () => {
+      const indicators = block.querySelectorAll('.hero__navigation-indicator');
+      indicators[0].click(); // Click on the first indicator
+      expect(block.querySelector('.hero__slide--active h1').id).toBe('first-slide-heading');
+    });
+  });
+});

@@ -1,0 +1,51 @@
+/**
+ * @jest-environment-options {"url": "https://www.agilent.com/en/products/test-product"}
+ */
+import { jest } from '@jest/globals';
+import { buildAlternateHeaders, setHtmlLang } from '../../scripts/seo.js';
+
+jest.mock('../../scripts/aem.js');
+
+describe('SEO - buildAlternateHeaders', () => {
+  let mockHead;
+
+  beforeEach(() => {
+    // Reset all mocks
+    jest.clearAllMocks();
+
+    Object.defineProperty(document, 'cookie', {
+      writable: true,
+      value: 'agilent_locale=en-US; path=/en/products/test-product',
+    });
+    fetch.mockResponse((req) => (req.url === '/query-index.json'
+      ? Promise.resolve(JSON.stringify({
+        data: [
+          { path: '/en/products/test-product' },
+          { path: '/zh-cn/products/test-product' },
+          { path: '/fr-fr/products/test-product' },
+          { path: '/de-de/products/test-product' },
+          { path: '/pt-br/products/test-product-new' },
+        ],
+      }))
+      : Promise.reject(new Error('unexpected request'))));
+    mockHead = document.createElement('head');
+    document.querySelector = jest.fn().mockReturnValue(mockHead);
+  });
+
+  test('should create alternate links for supported languages', async () => {
+    await buildAlternateHeaders();
+    expect(mockHead.innerHTML).toContain('hreflang="x-default"');
+    expect(mockHead.innerHTML).toContain('hreflang="fr-fr"');
+    expect(mockHead.innerHTML).toContain('hreflang="de-de"');
+    expect(mockHead.innerHTML).toContain('https://www.agilent.com/en/products/test-product');
+    expect(mockHead.innerHTML).toContain('https://www.agilent.com/fr-fr/products/test-product');
+    expect(mockHead.innerHTML).toContain('https://www.agilent.com/de-de/products/test-product');
+    expect(mockHead.innerHTML).toContain('https://www.agilent.com.cn/zh-cn/products/test-product');
+    expect(mockHead.innerHTML).not.toContain('https://www.agilent.com/pt-br/products/test-product-new');
+  });
+
+  test('should have en-US lang property to html tag', async () => {
+    setHtmlLang();
+    expect(document.documentElement.lang).toBe('en-US');
+  });
+});

@@ -1,0 +1,5 @@
+# Ignore library and font styles from linting generated from plugins/styles
+/styles/lib-styles.css
+/styles/fonts.css
+/styles/fonts-china.css
+/scripts/videojs/videojs.css

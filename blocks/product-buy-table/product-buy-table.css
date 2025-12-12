@@ -1,0 +1,79 @@
+.product-buy-table table{
+    width: 100%;
+
+    thead {
+        background: gray;
+        color: var(--primary-color-text, #fff);
+    }
+
+    tr {
+        border: 1px solid #F4F3F1;
+        border-left-color: #D4D9DE;
+        border-right-color: #D4D9DE;
+    }
+
+    th,td {
+        padding: 8px;
+        font-weight: normal;
+    }
+
+    tbody {
+        tr {
+            &:hover {
+                background-color: #EEF7FC;
+                color: var(--primary-color);
+                cursor: pointer;
+            }
+
+            td {
+                color: #808A8E;
+            }
+
+            &.description {
+                display: none;
+
+                tr td {
+                    border: 0;
+                }
+            }
+
+            &.show > td:first-child::before {
+                content: '-';
+            }
+
+            &.show + .description {
+                display: table-row;
+            }
+        }
+
+        tr.even,
+        tr.even + .description {
+            background-color: rgb(244 243 241);
+        }
+
+        input {
+            width: 70px;
+            height: 32px;
+            color: var(--primary-color);
+            background: #fff;
+            border: 1px solid #F4F3F1;
+            text-align: center;
+            border-radius: 0;
+            transition: border-color 0.15s ease-in-out 0s;
+
+            &:focus {
+                color: var(--body-text-color);
+                background: #fff;
+                border: 1px solid #5a6772;
+                border-radius: 0;
+                outline: 0;
+            }
+        }
+    }
+}
+
+.product-buy-table-summary {
+    text-align: right;
+    color: #888B8D;
+    font-weight: 400;
+}

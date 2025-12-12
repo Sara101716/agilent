@@ -1,0 +1,33 @@
+{
+  "name": "@agilent/sirius-aem-acom",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Sirius AEM agilent.com frontend.",
+  "author": "Agilent Technologies",
+  "license": "Internal",
+  "type": "module",
+  "scripts": {
+    "lint:js": "eslint .",
+    "lint:css": "stylelint \"blocks/**/*.css\" \"styles/*.css\"",
+    "lint": "npm run lint:js && npm run lint:css",
+    "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" npx jest",
+    "local": "aem up --url https://dev1--acomqa--agilent.aem.page/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://sparksource.collaboration.agilent.com/scm/itds/sirius-aem-acom.git"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "7.27.0",
+    "cross-env": "^7.0.3",
+    "eslint": "8.57.1",
+    "eslint-config-airbnb-base": "15.0.0",
+    "eslint-plugin-import": "2.31.0",
+    "eslint-plugin-jest": "^29.0.1",
+    "jest": "^30.0.4",
+    "jest-environment-jsdom": "30.0.4",
+    "jest-fetch-mock": "3.0.3",
+    "stylelint": "16.17.0",
+    "stylelint-config-standard": "37.0.0"
+  }
+}

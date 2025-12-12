@@ -1,0 +1,7 @@
+helix-importer-ui
+/scripts/coveo/
+/scripts/analytics/lib
+/scripts/videojs/video.min.js
+/scripts/lib-js/
+/plugins
+/tools

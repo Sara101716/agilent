@@ -1,0 +1,51 @@
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<style>
+  body {
+    display: none;
+  }
+</style>
+<link rel="preconnect" href="https://stg-login.agilent.com" />
+<link rel="preconnect" href="https://agilenttechnologiesincnonproduction33msm0y1x.org.coveo.com" />
+<link rel="preload" href="/styles/lib-styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
+<link rel="preload" href="/styles/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
+<script type="module">
+window.sirius = window.sirius || {};
+window.sirius.loading = window.sirius.loading || {};
+window.sirius.loading.envConfigPromise = fetch('/.env/config.json');
+fetch('/services/countryinfo');
+if (document.querySelector('meta[name="template"][content="searchresults"]') || document.querySelector('main .search-results')) {
+  // preload scripts on critical path
+  import('/templates/searchresults/searchresults.js');
+  import('/scripts/services/atg.api.js');
+  import('/scripts/coveo/bueno/v1.1.0/bueno.esm.js');
+  (async () => {
+    const { fetchFacetsConfig } = await import('/scripts/coveo/utils.js');
+    fetchFacetsConfig(); // trigger facets request early
+  })();
+  import('/scripts/coveo/headless/commerce/headless.esm.js');
+  import('/scripts/coveo/headless/commerce/index.js');
+  import('/scripts/coveo/headless/headless.esm.js');
+  import('/scripts/coveo/headless/index.js');
+  import('/blocks/search-results/search-results.js');
+  import('/blocks/search-results/basics/basics.js');
+  import('/blocks/search-results/items/items.js');
+  import('/blocks/search-results/product/product.js');
+  import('/blocks/search-results/loading/loading.js');
+  import('/blocks/search-results/tabs-control/tabs-control.js');
+  try {
+    // pre-load fallback image
+    const fallbackImage = [...document.querySelectorAll('main .search-results > div > div:first-child')].find((key) => key.textContent.trim().toLowerCase() === 'agilent spark icon');
+    const src = fallbackImage?.parentElement.children[1]?.querySelector('img')?.src;
+    if (src) {
+      new Image().src = src;
+    }
+  } catch (error) {
+    console.error('Error pre-loading fallback image:', error);
+  }
+}
+</script>
+<script src="/scripts/aem.js" type="module"></script>
+<script src="/scripts/scripts.js" type="module"></script>
+<script src="/blocks/fragment/fragment.js" type="module" defer></script>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">

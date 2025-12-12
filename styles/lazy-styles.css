@@ -1,0 +1,30 @@
+/* add global styles that can be loaded post LCP here */
+@media (width >=900px) {
+    main>.highlight-section {
+        display: grid;
+        grid-template-columns: 1fr 284px;
+        gap: 10px;
+        grid-auto-rows: min-content;
+        margin-inline: auto;
+        width: 1190px;
+
+        .default-content-wrapper:first-child {
+            grid-column: 1;
+            align-self: start;
+            height: auto;
+        }
+
+        .columns-wrapper {
+            grid-column: 1;
+        }
+
+        .default-content-wrapper:last-child {
+            align-self: start;
+            grid-column: 2;
+        }
+
+        .default-content-wrapper:last-child ul li {
+            margin-bottom: 18px;
+        }
+    }
+}

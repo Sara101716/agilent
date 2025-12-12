@@ -1,0 +1,279 @@
+import { jest } from '@jest/globals';
+import { buildAutoBlocks } from '../../scripts/autoblock.js';
+
+describe('AutoBlock', () => {
+  let main;
+
+  beforeEach(() => {
+    // Create a main container element
+    main = document.createElement('main');
+    document.body.appendChild(main);
+  });
+
+  afterEach(() => {
+    // Clean up after each test
+    document.body.innerHTML = '';
+  });
+
+  describe('buildSectionHeader', () => {
+    test('should add section__header class to matching elements', () => {
+      // Create a section with the expected structure
+      main.innerHTML = `
+        <div class="section">
+          <div class="default-content-wrapper">
+            <h2>Section Title</h2>
+            <p>Section description</p>
+          </div>
+        </div>
+      `;
+
+      buildAutoBlocks(main);
+
+      const sectionHeader = main.querySelector('.default-content-wrapper');
+      expect(sectionHeader.classList.contains('section__header')).toBe(true);
+    });
+
+    test('should add section__title class to header elements', () => {
+      main.innerHTML = `
+        <div class="section">
+          <div class="default-content-wrapper">
+            <h2>Section Title</h2>
+            <p><a href="https://example.com">Section description</a></p>
+          </div>
+        </div>
+      `;
+
+      buildAutoBlocks(main);
+
+      const header = main.querySelector('.default-content-wrapper > h2');
+      const paragraph = main.querySelector('.default-content-wrapper > p');
+      expect(header.classList.contains('section__title')).toBe(true);
+      expect(paragraph.classList.contains('section__link')).toBe(true);
+    });
+
+    test('should work with different header levels (h1-h6)', () => {
+      const headerLevels = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
+      headerLevels.forEach((headerTag) => {
+        main.innerHTML = `
+          <div class="section">
+            <div class="default-content-wrapper">
+              <${headerTag}>Section Title</${headerTag}>
+              <p>Section description</p>
+            </div>
+          </div>
+        `;
+
+        buildAutoBlocks(main);
+
+        const header = main.querySelector(headerTag);
+        expect(header.classList.contains('section__title')).toBe(true);
+        main.innerHTML = '';
+      });
+    });
+
+    test('should add classes when structure does match', () => {
+      // Should add the class when there is a header
+      main.innerHTML = `
+        <div class="section">
+          <div class="default-content-wrapper">
+            <h2>Section Title</h2>
+          </div>
+        </div>
+      `;
+
+      buildAutoBlocks(main);
+
+      const sectionHeader = main.querySelector('.default-content-wrapper');
+      expect(sectionHeader.classList.contains('section__header')).toBe(true);
+    });
+
+    test('should not add classes when there are extra elements', () => {
+      // Extra element breaks the :last-child condition
+      main.innerHTML = `
+        <div class="section">
+          <div class="default-content-wrapper">
+            <h2>Section Title</h2>
+            <p>Section description</p>
+            <div>Extra element</div>
+          </div>
+        </div>
+      `;
+
+      buildAutoBlocks(main);
+
+      const sectionHeader = main.querySelector('.default-content-wrapper');
+      expect(sectionHeader.classList.contains('section__header')).toBe(false);
+    });
+
+    test('should handle multiple matching sections', () => {
+      main.innerHTML = `
+        <div class="section">
+          <div class="default-content-wrapper">
+            <h2>First Section Title</h2>
+            <p><a href="https://example.com">First section description</a></p>
+          </div>
+        </div>
+        <div class="section">
+          <div class="default-content-wrapper">
+            <h3>Second Section Title</h3>
+            <p><a href="https://example.com">Second section description</a></p>
+          </div>
+        </div>
+      `;
+
+      buildAutoBlocks(main);
+
+      const sectionHeaders = main.querySelectorAll('.section__header');
+      expect(sectionHeaders.length).toBe(2);
+
+      const sectionTitles = main.querySelectorAll('.section__title');
+      expect(sectionTitles.length).toBe(2);
+
+      const sectionLinks = main.querySelectorAll('.section__link');
+      expect(sectionLinks.length).toBe(2);
+    });
+  });
+
+  describe('buildImageWithLinks', () => {
+    test('should combine image link and text link when they have the same href', () => {
+      main.innerHTML = `
+        <p>
+            <picture>
+              <img src="image.jpg" alt="Test Image">
+            </picture>
+        </p>
+        <p class="button-container">
+          <a href="https://example.com">Learn More</a>
+        </p>
+      `;
+
+      buildAutoBlocks(main);
+
+      // The first paragraph should be removed
+      const paragraphs = main.querySelectorAll('p');
+      expect(paragraphs.length).toBe(1);
+
+      // The remaining link should have the image-link class
+      const imageLink = main.querySelector('.image-link');
+      expect(imageLink).toBeTruthy();
+      expect(imageLink.href).toBe('https://example.com/');
+
+      // The picture should be moved inside the text link
+      const picture = imageLink.querySelector('picture');
+      expect(picture).toBeTruthy();
+
+      // The text should still be there
+      expect(imageLink.textContent.trim()).toBe('Learn More');
+    });
+
+    test('should handle multiple image-link combinations', () => {
+      main.innerHTML = `
+        <p>
+          <picture>
+            <img src="image1.jpg" alt="Image 1">
+          </picture>
+        </p>
+        <p class="button-container">
+          <a href="https://example.com">First Link</a>
+        </p>
+        <p>
+          <picture>
+            <img src="image2.jpg" alt="Image 2">
+          </picture>
+        </p>
+        <p class="button-container">
+          <a href="https://second.com">Second Link</a>
+        </p>
+      `;
+
+      buildAutoBlocks(main);
+
+      // Should have 2 remaining paragraphs (the combined ones)
+      const paragraphs = main.querySelectorAll('p');
+      expect(paragraphs.length).toBe(2);
+
+      // Should have 2 image-link elements
+      const imageLinks = main.querySelectorAll('.image-link');
+      expect(imageLinks.length).toBe(2);
+
+      // Check that pictures are inside the links
+      imageLinks.forEach((link) => {
+        const picture = link.querySelector('picture');
+        expect(picture).toBeTruthy();
+      });
+    });
+
+    test('should not process if paragraphs are not adjacent', () => {
+      main.innerHTML = `
+        <p>
+          <picture>
+            <img src="image.jpg" alt="Test Image">
+          </picture>
+        </p>
+        <div>Some other content</div>
+        <p>
+          <a href="https://example.com">Learn More</a>
+        </p>
+      `;
+
+      buildAutoBlocks(main);
+
+      // All elements should remain
+      const paragraphs = main.querySelectorAll('p');
+      expect(paragraphs.length).toBe(2);
+
+      const imageLink = main.querySelector('.image-link');
+      expect(imageLink).toBe(null);
+    });
+  });
+
+  describe('buildSectionLinkMobile', () => {
+    let mockMatchMedia;
+
+    beforeEach(() => {
+      // Mock window.matchMedia
+      mockMatchMedia = jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      }));
+
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: mockMatchMedia,
+      });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    test('should not process sections without section-ctamobile class', () => {
+      main.innerHTML = `
+        <div class="section">
+          <div class="section__link">
+            <a href="https://example.com" class="agt-link">Regular Link</a>
+          </div>
+        </div>
+        <div class="section other-class">
+          <div class="section__link">
+            <a href="https://example.com" class="agt-link">Another Link</a>
+          </div>
+        </div>
+      `;
+
+      buildAutoBlocks(main);
+
+      const mobileWrappers = main.querySelectorAll('.button-ctamobile-wrapper');
+      const mobileButtons = main.querySelectorAll('.button-ctamobile');
+      const columnsCtas = main.querySelectorAll('.columns-cta');
+
+      expect(mobileWrappers.length).toBe(0);
+      expect(mobileButtons.length).toBe(0);
+      expect(columnsCtas.length).toBe(0);
+    });
+  });
+});

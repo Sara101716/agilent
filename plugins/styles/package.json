@@ -1,0 +1,15 @@
+{
+  "name": "@agilent/sirius-aem-styles",
+  "version": "1.0.0",
+  "description": "Styles plugin for Sirius AEM project",
+  "main": "index.js",
+  "scripts": {
+    "build": "sass --load-path=node_modules --style compressed src/index.scss:../../styles/lib-styles.css src/fonts.scss:../../styles/fonts.css src/fonts-china.scss:../../styles/fonts-china.css",
+    "test": "echo 'No tests specified'"
+  },
+  "author": "Agilent",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "sass": "^1.89.2"
+  }
+}

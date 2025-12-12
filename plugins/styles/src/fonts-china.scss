@@ -1,0 +1,25 @@
+// TODO: update design system after confirming the usage of china fonts. Currently the china fonts are too big in size (1MB).
+// Need to reconsider to font subset or use google fonts(within china its a problem to access google fonts).
+@font-face {
+  font-display: swap; 
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 300;
+  src: url('../fonts/noto-sans-sc-chinese-simplified-light.woff2') format('woff2');
+}
+
+@font-face {
+  font-display: swap; 
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/noto-sans-sc-chinese-simplified-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-display: swap; 
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 500;
+  src: url('../fonts/noto-sans-sc-chinese-simplified-medium.woff2') format('woff2');
+}
