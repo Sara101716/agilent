@@ -1,0 +1,336 @@
+.wechat-floatingbar {
+    --wechat-floatingbar-accordion-width: 21rem;
+    --wechat-floatingbar-width: 5.125rem;
+    --wechat-floatingbar-size-bottom: 5.25rem;
+
+    position: fixed;
+    bottom: var(--agt-spacing-96);
+    right: var(--agt-spacing-0);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    background-color: var(--agt-color-brand-blue-1600);
+    border-radius: var(--agt-roundness-main);
+    box-shadow: var(--agt-shadow-drop-shadow-floating-panel);
+}
+
+.wechat-floatingbar__mobile {
+    position: fixed;
+    bottom: var(--agt-spacing-12);
+    right: var(--agt-spacing-0);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--agt-spacing-8);
+}
+
+.wechat-floatingbar__mobile-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: var(--agt-spacing-48);
+    height: auto;
+    background-color: var(--agt-color-brand-blue-1600);
+    padding: var(--agt-spacing-12) var(--agt-spacing-0);
+    color: var(--agt-color-base-white);
+    border: none;
+    border-radius: var(--agt-roundness-main);
+}
+
+.wechat-floatingbar__mobile-item--global {
+    width: var(--agt-spacing-64);
+    height: auto;
+    max-height: var(--wechat-floatingbar-size-bottom);
+    color: var(--agt-color-base-white);
+    font-size: var(--agt-font-size-12);
+}
+
+.wechat-floatingbar__list-title a,
+.wechat-floatingbar__mobile-title a {
+    color: var(--agt-color-base-white);
+}
+
+.wechat-floatingbar__mobile-item a {
+    flex-direction: column;
+    gap: var(--agt-spacing-8);
+}
+
+a.wechat-floatingbar__mobile-item--global:hover {
+    color: var(--agt-color-base-white);
+    background-color: var(--agt-color-brand-blue-1600);
+    text-decoration: none;
+}
+
+.wechat-floatingbar__mobile-item a p {
+    color: var(--agt-color-base-white);
+}
+
+.wechat-floatingbar__toggle .icon {
+    transition: transform 0.3s ease;
+    transform: rotate(0deg);
+}
+
+.wechat-floatingbar__list-title .icon {
+    color: var(--agt-color-base-white);
+    padding-top: var(--agt-spacing-2);
+    width: var(--agt-spacing-24);
+    height: auto;
+}
+
+.wechat-floatingbar__accordion-item-title .icon {
+    color: var(--agt-color-brand-blue-1600);
+    transition: transform 0.3s ease;
+    transform: rotate(0deg);
+}
+
+.wechat-floatingbar__mobile-item a .icon {
+    color: var(--agt-color-base-white);
+}
+
+.wechat-floatingbar__mobile-title {
+    font-size: var(--agt-font-size-14);
+    text-align: center;
+    margin: var(--agt-spacing-6) var(--agt-spacing-0);
+    cursor: pointer;
+    background-color: var(--agt-color-brand-blue-1600);
+    color: var(--agt-color-base-white);
+    border: none;
+    border-radius: var(--agt-spacing-0);
+    padding: var(--agt-spacing-0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wechat-floatingbar__mobile-title:hover {
+    color: var(--agt-color-brand-blue-1600);
+    text-decoration: underline;
+}
+
+.wechat-floatingbar__toggle {
+    background-color: var(--agt-color-brand-blue-1600);
+    color: var(--agt-color-base-white);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: var(--agt-spacing-36);
+    width: var(--wechat-floatingbar-width);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: var(--agt-spacing-0);
+}
+
+.wechat-floatingbar__toggle:hover {
+    background-color: var(--agt-background-bg-brand-hover);
+}
+
+.wechat-floatingbar__toggle[aria-expanded="true"] {
+    background-color: var(--agt-background-bg-brand-selected);
+    border-radius: 0 0 var(--agt-roundness-main) var(--agt-roundness-main);
+}
+
+.wechat-floatingbar__toggle[aria-expanded="false"]:hover:not(:disabled) {
+    background-color: var(--agt-color-brand-blue-1600);
+}
+
+.wechat-floatingbar__toggle[aria-expanded="true"]:hover:not(:disabled) {
+    background-color: var(--agt-background-bg-brand-selected);
+}
+
+.wechat-floatingbar__toggle[aria-expanded="true"] .icon {
+    transform: rotate(180deg);
+}
+
+.wechat-floatingbar__list {
+    background-color: var(--agt-color-brand-blue-1600);
+    border-radius: var(--agt-roundness-secondary) var(--agt-roundness-secondary) 0 0;
+    display: none;
+    flex-direction: column;
+    padding: var(--agt-spacing-6);
+    width: var(--wechat-floatingbar-width);
+    gap: var(--agt-spacing-4);
+}
+
+.wechat-floatingbar__list-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.wechat-floatingbar__list-item:hover {
+    color: var(--agt-color-base-white);
+    background-color: var(--agt-background-bg-brand-hover);
+    text-decoration: none;
+    border-radius: var(--agt-roundness-main);
+}
+
+a.wechat-floatingbar__list-title:hover {
+    color: var(--agt-color-base-white);
+    text-decoration: none;
+}
+
+.wechat-floatingbar__accordion-item-link {
+    width: 100%;
+    border: none;
+    padding: var(--agt-spacing-0);
+}
+
+.wechat-floatingbar__list-title {
+    position: relative;
+    background-color: var(--agt-color-brand-blue-1600);
+    color: var(--agt-color-base-white);
+    border: none;
+    border-radius: var(--agt-roundness-secondary);
+    padding: var(--agt-spacing-0);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wechat-floatingbar__list-title::before {
+    content: "";
+    position: absolute;
+    left: -9px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: var(--agt-spacing-4) var(--agt-spacing-4) var(--agt-spacing-4) var(--agt-spacing-0);
+    border-color: transparent var(--agt-color-secondary-dark-blue-1700) transparent transparent;
+    display: none;
+}
+
+.wechat-floatingbar__list-title:hover::before,
+.wechat-floatingbar__list-title[aria-expanded="true"]::before {
+    display: block;
+}
+
+.wechat-floatingbar__list-title[aria-expanded="true"] {
+    background-color: var(--agt-background-bg-brand-selected);
+}
+
+.wechat-floatingbar__accordion {
+    position: absolute;
+    top: 0;
+    right: var(--agt-spacing-10);
+    background-color: var(--agt-color-base-white);
+    border-radius: var(--agt-roundness-secondary);
+    width: var(--wechat-floatingbar-accordion-width);
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    transform: translateX(10px);
+    padding: var(--agt-spacing-14) var(--agt-spacing-80) var(--agt-spacing-0) var(--agt-spacing-12);
+    z-index: -1;
+    max-height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    box-shadow: var(--agt-shadow-drop-shadow-floating-panel);
+    height: 100%;
+}
+
+.wechat-floatingbar__list-item[aria-expanded="true"] .wechat-floatingbar__accordion {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.wechat-floatingbar__accordion-item {
+    border-bottom: 1px solid var(--agt-color-grey-700);
+    padding-top: var(--agt-spacing-12);
+    padding-right: var(--agt-spacing-12);
+}
+
+.wechat-floatingbar__accordion-item:last-child {
+    border-bottom: none;
+}
+
+.wechat-floatingbar__accordion-item-title {
+    display: flex;
+    justify-content: space-between;
+    background-color: var(--agt-color-base-white);
+    color: var(--agt-color-brand-blue-1600);
+    padding: var(--agt-spacing-10) var(--agt-spacing-0);
+    width: 100%;
+    text-align: left;
+    border: none;
+    cursor: pointer;
+    font-size: var(--agt-font-size-16);
+}
+
+.wechat-floatingbar__accordion-item-link:hover {
+    background-color: unset;
+}
+
+.wechat-floatingbar__accordion-item-title a:hover {
+    color: var(--agt-color-brand-blue-1600);
+    background-color: unset;
+    padding: var(--agt-spacing-0);
+}
+
+button.wechat-floatingbar__accordion-item-title:hover {
+    border-radius: var(--agt-roundness-main);
+    background-color: var(--agt-background-bg-base-white-hover);
+    color: var(--agt-color-brand-blue-1600);
+}
+
+.wechat-floatingbar__accordion-item-title[aria-expanded="true"] .icon {
+    transform: rotate(90deg);
+}
+
+.wechat-floatingbar__accordion-item-content {
+    padding: var(--agt-spacing-10) var(--agt-spacing-0);
+    display: none;
+    color: var(--agt-color-grey-1500);
+    background-color: var(--agt-color-base-white);
+}
+
+.wechat-floatingbar__accordion-item-content a picture {
+    width: var(--wechat-floatingbar-size-bottom);
+    height: auto;
+}
+
+.wechat-floatingbar__accordion-item-content a picture img {
+    vertical-align: top;
+}
+
+.wechat-floatingbar__accordion-item-content::-webkit-scrollbar {
+    display: none;
+}
+
+.wechat-floatingbar__accordion-item-content a:hover {
+    background-color: transparent;
+}
+
+.wechat-floatingbar__accordion-item-content:not(.hidden) {
+    display: block;
+}
+
+.wechat-floatingbar__toggle[aria-expanded="true"] + .wechat-floatingbar__list {
+    display: flex;
+}
+
+.wechat-floatingbar__accordion li {
+    list-style: none;
+}
+
+
+@media (width <= 768px) {
+    .wechat-floatingbar__mobile {
+        bottom: var(--wechat-floatingbar-size-bottom);
+        right: var(--agt-spacing-0);
+    }
+}
+
+@media (width > 1024px) { 
+    .wechat-floatingbar__mobile {
+        bottom: var(--wechat-floatingbar-size-bottom);
+        right: var(--agt-spacing-0);
+    }
+}

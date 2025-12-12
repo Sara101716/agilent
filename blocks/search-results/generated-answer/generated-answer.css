@@ -1,0 +1,169 @@
+.generated-answer.compendiumcard {
+    background-color: var(--agt-utility-grey-100);
+    padding: var(--agt-spacing-32);
+
+    button {
+        background-color: unset;
+        padding: unset;
+        cursor: pointer;
+    }
+
+    .title-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: stretch;
+
+        @media (width >=1024px) {
+            flex-direction: row;
+            align-items: flex-start;
+        }
+
+        .pub-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .likes {
+            display: flex;
+            flex-direction: row;
+            gap: var(--agt-spacing-sm-px);
+            align-self: flex-end;
+
+            button {
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.15s ease;
+            }
+
+            img {
+                min-width: var(--agt-spacing-5xl-px);
+                height: auto;
+                padding: var(--agt-spacing-2xs-px);
+            }
+        }
+
+        .likes button:first-child img {
+            content: url("/icons/thumbsup.svg");
+        }
+
+        .likes button:last-child img {
+            content: url("/icons/thumbsdown.svg");
+        }
+
+        .likes button:first-child:hover img {
+            content: url("/icons/thumbsuphover.svg");
+            transform: scale(1.1);
+        }
+
+        .likes button:first-child.active img {
+            content: url("/icons/thumbsupfilled.svg");
+        }
+
+        .likes button:last-child:hover img {
+            content: url("/icons/thumbsdownhover.svg");
+            transform: scale(1.1);
+        }
+
+        .likes button:last-child.active img {
+            content: url("/icons/thumbsdownfilled.svg");
+        }
+    }
+
+    .citations-container {
+        display: none;
+        padding-top: var(--agt-spacing-24);
+
+        &[aria-expanded="true"] {
+            display: flex;
+            gap: var(--agt-spacing-10);
+        }
+
+        a {
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 20ch;
+            padding: var(--agt-spacing-8) var(--agt-spacing-20);
+            border: 1px solid var(--agt-stroke-str-line);
+            border-radius: var(--agt-spacing-4xl-px);
+            color: var(--agt-text-icons-tx-base-title);
+            box-sizing: border-box;
+
+            &:focus-visible {
+                outline: 2px solid var(--agt-color-base-black);
+                border: none;
+            }
+        }
+    }
+
+    .announce {
+        color: transparent;
+        position: absolute;
+        height: 1px;
+    }
+
+    .chin {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding-top: var(--agt-spacing-12);
+        flex-direction: column;
+
+        @media (width >=768px) {
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .genai-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--agt-spacing-2xl-px);
+            justify-content: flex-start;
+
+            .sources {
+                display: flex;
+                align-items: center;
+                gap: var(--agt-spacing-8);
+                cursor: pointer;
+
+                img.logo {
+                    width: var(--agt-spacing-6xl-px);
+                    min-height: auto;
+                    background-color: var(--agt-color-brand-blue-1100);
+                    border-radius: 100px;
+                    padding: var(--agt-roundness-main);
+                }
+            }
+        }
+
+        .disclaimer {
+            @media (width >=1024px) {
+                width: 50%;
+                flex-grow: 1;
+                margin-left: var(--agt-spacing-20);
+            }
+
+            p {
+                a {
+                    font: inherit;
+                    padding: 0;
+                    border: 0;
+
+                    &:focus {
+                        border: 2px solid var(--agt-color-base-black);
+                    }
+                }
+            }
+        }
+    }
+}

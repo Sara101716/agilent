@@ -1,0 +1,209 @@
+.search-results__sort {
+  display: none;
+
+  .sort-by-label {
+    display: none;
+    align-items: center;
+    gap: var(--agt-spacing-lg-px);
+    color: var(--agt-color-grey-2000);
+    outline-color: unset;
+
+    span {
+      outline-color: unset;
+    }
+  }
+
+  .sort-by {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cselect {
+    position: relative;
+    display: inline-block;
+    min-inline-size: var(--agt-min-max-system-192px);
+    color-scheme: light;
+    outline: unset;
+  }
+
+  .cselect__button {
+    display: none;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--agt-spacing-8);
+    inline-size: 100%;
+    padding: var(--agt-spacing-14) 2.375rem var(--agt-spacing-14) var(--agt-spacing-14);
+    background: var(--agt-color-base-white);
+    color: var(--agt-color-grey-2000);
+    border: 1px solid var(--agt-color-secondary-dark-blue-400);
+    border-radius: var(--agt-roundness-main);
+    cursor: pointer;
+    line-height: var(--agt-line-height-22);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+      border-color: var(--agt-color-secondary-dark-blue-600);
+      color: var(--agt-color-grey-2000);
+      background: var(--agt-color-base-white);
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline-end: var(--agt-spacing-2xl-px);
+      inset-block-start: 50%;
+      transform: translateY(-50%) rotate(45deg);
+      inline-size: var(--agt-spacing-md-px);
+      block-size: var(--agt-spacing-md-px);
+      border-inline-end: 2px solid var(--agt-color-brand-blue-1600);
+      border-block-end: 2px solid var(--agt-color-brand-blue-1600);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      opacity: 0.9;
+    }
+
+    &[aria-expanded="true"]::after {
+      transform: translateY(-50%) rotate(-135deg);
+      border-inline-end-color: var(--agt-color-brand-blue-1600);
+      border-block-end-color: var(--agt-color-brand-blue-1600);
+    }
+  }
+
+  .cselect__list {
+    position: absolute;
+    inset-inline-start: 0;
+    margin-block-start: var(--agt-spacing-sm-px);
+    inline-size: max(100%, var(--agt-min-max-system-192px));
+    max-block-size: var(--agt-breakpoints-3xs);
+    overflow: auto;
+    background: var(--agt-color-base-white);
+    color: var(--agt-color-grey-2000);
+    border: 1px solid var(--agt-color-secondary-dark-blue-300);
+    border-radius: var(--agt-roundness-main);
+    box-shadow: var(--agt-shadow-xl);
+    padding: var(--agt-spacing-sm-px);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    outline-color: unset;
+  }
+
+  .cselect button[aria-expanded="true"] + .cselect__list {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .cselect__option {
+    list-style: none;
+    padding: var(--agt-spacing-2xl-px) var(--agt-spacing-lg-px);
+    border-radius: var(--agt-roundness-main);
+    display: flex;
+    align-items: center;
+    gap: var(--agt-spacing-8);
+    cursor: pointer;
+    margin: var(--agt-roundness-main);
+
+    &:hover,
+    &.active {
+      background: color-mix(in oklab, var(--agt-color-brand-blue-300) 28%, transparent);
+    }
+
+    .menu-check {
+      display: none;
+    }
+
+    &[aria-selected="true"] .menu-check {
+      display: block;
+    }
+  }
+
+  &.sort-in-filters {
+    display: block;
+
+    .sort-by-label {
+      display: inline-flex;
+    }
+
+    .cselect__button {
+      display: flex;
+    }
+  }
+
+  .cselect.is-disabled .cselect__button {
+    background: var(--agt-background-bg-brand-main);
+    color: var(--agt-color-secondary-dark-blue-700);
+    cursor: not-allowed;
+    border-color: var(--agt-color-secondary-dark-blue-200);
+
+    &::after {
+      opacity: 0.4;
+    }
+  }
+}
+
+/* Desktop / tablet: header sort visible in controls__container */
+@media (width >= 1024px) {
+  .controls__container .search-results__sort {
+    display: block;
+  }
+
+  .controls__container .search-results__sort .sort-by-label {
+    display: inline-flex;
+    margin-inline-start: 0;
+  }
+
+  .controls__container .search-results__sort .cselect__button {
+    display: flex;
+    min-inline-size: var(--agt-min-max-system-160px);
+  }
+}
+
+/* Mobile: hide header sort, only show sort when moved into the filters
+   dialog and marked .sort-in-filters by filters.js */
+@media (width < 1024px) {
+  .controls__container .search-results__sort {
+    display: none;
+  }
+
+  .search-results__sort.sort-in-filters {
+    display: block;
+
+    .sort-by-label {
+      display: inline-flex;
+    }
+
+    .cselect__button {
+      display: flex;
+    }
+  }
+}
+
+/* Clean up Sort By inside the mobile filters dialog */
+.filters__dialog .filters__sort-accordion .search-results__sort.sort-in-filters {
+  /* make the sort block fill the width like other inputs */
+  width: 100%;
+}
+
+.filters__dialog .filters__sort-accordion .search-results__sort.sort-in-filters .sort-by-label {
+  display: block;
+  width: 100%;
+}
+
+/* hide the extra "Sort By" text inside, but keep the label for a11y */
+.filters__dialog .filters__sort-accordion .search-results__sort.sort-in-filters .sort-by-label > span {
+  display: none;
+}
+
+/* make the dropdown look like a normal full-width control */
+.filters__dialog .filters__sort-accordion .search-results__sort.sort-in-filters .cselect__button {
+  display: flex;
+  width: 100%;
+}

@@ -1,0 +1,103 @@
+.section.search-header-container {
+  .search-header-wrapper {
+    padding: var(--agt-spacing-0);
+  }
+}
+
+.search-header {
+  background-color: var(--agt-color-brand-blue-200);
+  color: var(--agt-color-grey-2000);
+  min-height: var(--agt-roundness-full);
+  position: relative;
+  width: 100%;
+
+  &.dark-background {
+    background-color: var(--agt-color-brand-blue-1600);
+    color: var(--agt-color-base-white);
+  }
+
+  >div {
+    min-height: var(--agt-roundness-full);
+
+    >div {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: var(--agt-roundness-full);
+      padding: var(--agt-spacing-5xl-px) var(--agt-spacing-xl-px);
+      width: 100%;
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-size: var(--agt-font-size-32);
+      }
+
+      p {
+        font-size: var(--agt-font-size-16);
+        font-weight: var(--agt-font-weight-regular);
+      }
+
+      p,
+      h1,
+      h2 {
+        box-sizing: border-box;
+        width: 100%;
+        z-index: 1;
+      }
+
+      p:first-of-type:has(img),
+      h1:first-of-type:has(img),
+      h2:first-of-type:has(img) {
+        img {
+          height: 100%;
+          left: var(--agt-spacing-0);
+          object-fit: cover;
+          position: absolute;
+          top: var(--agt-spacing-0);
+          width: 100%;
+          z-index: var(--agt-spacing-0);
+          display: none;
+        }
+      }
+    }
+  }
+
+  @media (width >=768px) {
+    >div>div {
+      padding: var(--agt-spacing-8xl-px) var(--agt-spacing-5xl-px);
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-size: var(--agt-font-size-42);
+      }
+
+      p {
+        font-size: var(--agt-font-size-18);
+        font-weight: var(--agt-font-weight-regular);
+      }
+
+      p:first-of-type:has(img),
+      h1:first-of-type:has(img),
+      h2:first-of-type:has(img) {
+        img {
+          display: block;
+        }
+      }
+    }
+  }
+
+  @media (width > 1024px) {
+    >div>div {
+      padding: var(--agt-spacing-9xl-px);
+    }
+  }
+}
